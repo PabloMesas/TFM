@@ -80,6 +80,59 @@ class DataGenerator(data_utils.Sequence):
         self.indexes = np.arange(len(self.list_IDs))
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
+    
+    def __crop_img(self, img):
+        x0 = 0
+        for slice in img:
+            if np.all(slice == 0.):
+                x0 +=1
+            else:
+                break
+        
+        x1 = 0
+        for i in range(len(img), 0, -1):
+            if np.all(img[i-1] == 0.):
+                x1 +=1
+            else:
+                break
+        
+        y0 = 0
+        for i in range(len(img[0])):
+            if np.all(img[:,i] == 0):
+                y0 +=1
+            else:
+                break
+        
+        y1 = 0
+        for i in range(len(img[0]), 0, -1):
+            if np.all(img[:,i-1] == 0):
+                y1 +=1
+            else:
+                break
+
+        z0 = 0
+        for i in range(len(img[0,0])):
+            if np.all(img[:,:,i] == 0):
+                z0 +=1
+            else:
+                break
+        
+        z1 = 0
+        for i in range(len(img[0,0]), 0, -1):
+            if np.all(img[:,:,i-1] == 0):
+                z1 +=1
+            else:
+                break
+        # print(x0)
+        # print(x1)
+        # print(y0)
+        # print(y1)
+        # print(z0)
+        # print(z1)
+        # print(img.shape)
+        # print(img[x0:-x1,y0:-y1,z0:-z1].shape)
+        return img[x0:-(1+x1),y0:-(1+y1),z0:-(1+z1)]
+        # return img[x0:-(1+x1),:,:]
 
     def __data_generation(self, Batch_ids, Batch_Y):
         'Generates data containing batch_size samples'
@@ -94,13 +147,17 @@ class DataGenerator(data_utils.Sequence):
             # load nibabel Method
             img = nib.load(img_path).get_fdata()
             
+            # print(img.shape)
+            img = self.__crop_img(img)
+            # print(img.shape)
+            
             if self.rotation > 0 and self.rotation <= 90:
               angle = random.randint(-self.rotation, self.rotation)
-              img = ndimage.rotate(img, angle, reshape=False)
+              img = ndimage.rotate(img, angle)
     
-
             # # One more dimension for the channels
             img = np.expand_dims(img, axis=3)
+            # print(img.shape)
 
             X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
         return X/np.max(X) #We normalize between 0 an 1

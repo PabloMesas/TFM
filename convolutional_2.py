@@ -33,11 +33,11 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 1
+batch_size = 6
 epochs = 100
 # frozen_epochs = 100
 num_classes = 3
-images_shape = (192,192,160)
+images_shape = (100,120,70)
 n_channels = 1
 
 
@@ -68,13 +68,6 @@ def CBGN(model,filters,lname,ishape=0):
                  input_shape=ishape))
   else:
     model.add(Conv3D(filters=filters, kernel_size=3, activation="relu"))
-    
-  model.add(BN())
-#   model.add(GN(0.2))
-
-  model.add(Conv3D(filters=filters, kernel_size=3, activation="relu"))
-  model.add(BN())
-#   model.add(GN(0.2))
 
   model.add(MaxPool3D(pool_size=2,name=lname))
   
@@ -83,7 +76,7 @@ def CBGN(model,filters,lname,ishape=0):
 
 model = Sequential()
 
-model=CBGN(model,32,'conv_model_1',(192,192,160,1))
+model=CBGN(model,32,'conv_model_1',(images_shape[0], images_shape[1], images_shape[2], 1))
 model=CBGN(model,64,'conv_model_2')
 model=CBGN(model,128,'conv_modeL_3')
 model=CBGN(model,256,'conv_modeL_4')
