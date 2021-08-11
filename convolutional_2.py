@@ -12,7 +12,7 @@ from tensorflow.keras.layers import BatchNormalization as BN
 # from keras.layers import GaussianNoise as GN
 from tensorflow.keras.layers import Dense, Flatten, Conv3D, MaxPooling3D, MaxPool3D, GlobalAveragePooling3D, Dropout, Activation
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
-from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, CSVLogger
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
 # from tensorflow.python.keras.utils import data_utils
@@ -42,7 +42,7 @@ images_shape = (100,120,70)
 n_channels = 1
 
 
-project_dir = "/home/pmeslaf/DATA/"
+project_dir = "/home/pmeslaf/TFM/DATA/"
 from data_generator import DataGenerator
 
 training_generator = DataGenerator(data_path=project_dir + '/Train/',
@@ -67,9 +67,29 @@ test_generator = DataGenerator(data_path=project_dir + '/Test/',
 
 
 # # Create a callback that saves the model's weights
-checkpoint_path = project_dir + "weights.best.hdf5"
-checkpoint = ModelCheckpoint(checkpoint_path, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
-callbacks_list = [checkpoint]
+checkpoint_path = project_dir + 'model_.{epoch:02d}-{val_loss:.6f}.m5'
+callbacks_list = [
+            # EarlyStopping(monitor='loss',
+            #               min_delta=0,
+            #               patience=2,
+            #               verbose=1,
+            #               mode='auto'),
+            # ReduceLROnPlateau(monitor='val_loss',
+            #                   factor=0.2,
+            #                   patience=2,
+            #                   min_lr=0.000001,
+            #                   verbose=1),
+            ModelCheckpoint(filepath=checkpoint_path,
+                            verbose=1,
+                            save_best_only=True,
+                            save_weights_only = True,
+                            mode='max'),
+            CSVLogger( project_dir + 'training.log',
+                      separator=',',
+                      append=False)
+    ]
+
+
 
 # **MODEL**
 
@@ -128,8 +148,8 @@ plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 plt.savefig(project_dir + 'evolution_training.png')
-plt.show()
+# plt.show()
 
 
 # model.load_weights(checkpoint_path_defrost)
-predictions = model.evaluate(test_generator)
+# predictions = model.evaluate(test_generator)
