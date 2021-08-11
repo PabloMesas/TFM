@@ -29,7 +29,7 @@ class DataGenerator(data_utils.Sequence):
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.rotation = rotation
-        self.classes = ["AD", "CN"]#, "MCI"]
+        self.classes = ["AD", "CN", "MCI"]
         self.label_encoder = self.__set_label_encoder(self.classes)
         self.list_IDs, self.Y_labels = self.__get_index(data_path)
         self.on_epoch_end()
@@ -153,10 +153,10 @@ class DataGenerator(data_utils.Sequence):
             if self.rotation > 0 and self.rotation <= 90:
               angle = random.randint(-self.rotation, self.rotation)
               img = ndimage.rotate(img, angle)
-            print(type(img))
+            # print(type(img))
             
             img = self.__crop_img(img)
-            print(type(img))
+            # print(type(img))
             # print(img.shape)
     
             # # One more dimension for the channels
