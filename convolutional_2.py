@@ -12,6 +12,7 @@ from tensorflow.keras.layers import BatchNormalization as BN
 # from keras.layers import GaussianNoise as GN
 from tensorflow.keras.layers import Dense, Flatten, Conv3D, MaxPooling3D, MaxPool3D, GlobalAveragePooling3D, Dropout, Activation
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
+from tensorflow.keras.callbacks import ModelCheckpoint
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
 # from tensorflow.python.keras.utils import data_utils
@@ -33,10 +34,10 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 6
+batch_size = 10
 epochs = 100
 # frozen_epochs = 100
-num_classes = 3
+num_classes = 2
 images_shape = (100,120,70)
 n_channels = 1
 
@@ -51,17 +52,27 @@ training_generator = DataGenerator(data_path=project_dir + '/Train/',
                                    num_classes=num_classes,
                                    shuffle=True,
                                    rotation=60)
-# valid_generator = DataGenerator(val_ids)
+valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
+                                   dim=images_shape,
+                                   batch_size = batch_size,
+                                   n_channels = n_channels,
+                                   num_classes=num_classes,
+                                   shuffle=True)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape,
                                    batch_size = batch_size,
                                    n_channels = n_channels,
                                    num_classes=num_classes,
-                                   shuffle=False)
+                                   shuffle=True)
+
+
+# # Create a callback that saves the model's weights
+checkpoint_path = project_dir + "weights.best.hdf5"
+checkpoint = ModelCheckpoint(checkpoint_path, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+callbacks_list = [checkpoint]
 
 # **MODEL**
 
-## DEF A BLOCK CONV + BN + GN + CONV + BN + GN + MAXPOOL 
 def CBGN(model,filters,lname,ishape=0):
   if (ishape!=0):
     model.add(Conv3D(filters=filters, kernel_size=3, activation="relu",
@@ -103,7 +114,22 @@ model.compile(loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Fit data to model
+# model.load_weights(checkpoint_path)
 history = model.fit(x=training_generator,
                     epochs=epochs,
                     verbose=1,
-                    validation_data = test_generator)
+                    callbacks=callbacks_list,
+                    validation_data=valid_generator)
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'val'], loc='upper left')
+plt.savefig(project_dir + 'evolution_training.png')
+plt.show()
+
+
+# model.load_weights(checkpoint_path_defrost)
+predictions = model.evaluate(test_generator)

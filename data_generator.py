@@ -29,8 +29,8 @@ class DataGenerator(data_utils.Sequence):
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.rotation = rotation
-
-        self.label_encoder = self.__set_label_encoder(["AD", "CN", "MCI"])
+        self.classes = ["AD", "CN"]#, "MCI"]
+        self.label_encoder = self.__set_label_encoder(self.classes)
         self.list_IDs, self.Y_labels = self.__get_index(data_path)
         self.on_epoch_end()
     
@@ -41,8 +41,9 @@ class DataGenerator(data_utils.Sequence):
 
         for f in files:
             f = f.split('/')
-            x_index.append(f[1])
-            y_labels.append(f[0])
+            if f[0] in self.classes:
+                x_index.append(f[1])
+                y_labels.append(f[0])
 
         y_labels = self.label_encoder.transform(y_labels)
         
