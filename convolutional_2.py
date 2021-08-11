@@ -34,7 +34,7 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 6
+batch_size = 1
 epochs = 100
 # frozen_epochs = 100
 num_classes = 3
@@ -75,17 +75,19 @@ callbacks_list = [
             #               patience=2,
             #               verbose=1,
             #               mode='auto'),
-            # ReduceLROnPlateau(monitor='val_loss',
-            #                   factor=0.2,
-            #                   patience=2,
-            #                   min_lr=0.000001,
-            #                   verbose=1),
+            ReduceLROnPlateau(monitor='val_loss',
+                              factor=0.2,
+                              patience=2,
+                              min_lr=0.000001,
+                              verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
-                            monitor='val_accuracy',
+                            # monitor='val_accuracy',
+                            # mode='max',
+                            monitor='val_loss',
+                            mode='min',
                             verbose=1,
                             save_best_only=True,
-                            save_weights_only = True,
-                            mode='max'),
+                            save_weights_only = True),
             CSVLogger( project_dir + 'training.log',
                       separator=',',
                       append=False)
@@ -127,7 +129,7 @@ model.add(Activation('softmax'))
 
 model.summary()
 
-opt = Adam(1, decay=1e-6)
+opt = Adam(0.1, decay=1e-6)
 
 
 # Compile the model
@@ -136,12 +138,14 @@ model.compile(loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Fit data to model
-# model.load_weights(checkpoint_path)
+# model.load_weights(project_dir + 'model_.02-397.241638.m5')
 history = model.fit(x=training_generator,
                     epochs=epochs,
                     verbose=1,
                     callbacks=callbacks_list,
-                    validation_data=valid_generator)
+                    validation_data=valid_generator,
+                    use_multiprocessing=True,
+                    workers=12)
 
 plt.plot(history.history['accuracy'])
 plt.plot(history.history['val_accuracy'])
