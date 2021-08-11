@@ -80,6 +80,7 @@ callbacks_list = [
             #                   min_lr=0.000001,
             #                   verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
+                            monitor='val_accuracy',
                             verbose=1,
                             save_best_only=True,
                             save_weights_only = True,
