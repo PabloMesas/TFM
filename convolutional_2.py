@@ -34,11 +34,12 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 10
+batch_size = 6
 epochs = 100
 # frozen_epochs = 100
-num_classes = 2
-images_shape = (100,120,70)
+num_classes = 3
+shape=120
+images_shape = (shape,shape,int(shape*0.8))
 n_channels = 1
 
 
@@ -80,6 +81,7 @@ callbacks_list = [
             #                   min_lr=0.000001,
             #                   verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
+                            monitor='val_accuracy',
                             verbose=1,
                             save_best_only=True,
                             save_weights_only = True,

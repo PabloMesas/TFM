@@ -29,7 +29,7 @@ class DataGenerator(data_utils.Sequence):
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.rotation = rotation
-        self.classes = ["AD", "CN"]#, "MCI"]
+        self.classes = ["AD", "CN", "MCI"]
         self.label_encoder = self.__set_label_encoder(self.classes)
         self.list_IDs, self.Y_labels = self.__get_index(data_path)
         self.on_epoch_end()
@@ -85,42 +85,42 @@ class DataGenerator(data_utils.Sequence):
     def __crop_img(self, img):
         x0 = 0
         for slice in img:
-            if np.all(slice == 0.):
+            if np.all(slice < 0.000001):
                 x0 +=1
             else:
                 break
         
         x1 = 0
         for i in range(len(img), 0, -1):
-            if np.all(img[i-1] == 0.):
+            if np.all(img[i-1] < 0.00001):
                 x1 +=1
             else:
                 break
         
         y0 = 0
         for i in range(len(img[0])):
-            if np.all(img[:,i] == 0):
+            if np.all(img[:,i] < 0.00001):
                 y0 +=1
             else:
                 break
         
         y1 = 0
         for i in range(len(img[0]), 0, -1):
-            if np.all(img[:,i-1] == 0):
+            if np.all(img[:,i-1] < 0.00001):
                 y1 +=1
             else:
                 break
 
         z0 = 0
         for i in range(len(img[0,0])):
-            if np.all(img[:,:,i] == 0):
+            if np.all(img[:,:,i] < 0.00001):
                 z0 +=1
             else:
                 break
         
         z1 = 0
         for i in range(len(img[0,0]), 0, -1):
-            if np.all(img[:,:,i-1] == 0):
+            if np.all(img[:,:,i-1] < 0.00001):
                 z1 +=1
             else:
                 break
@@ -147,14 +147,17 @@ class DataGenerator(data_utils.Sequence):
 
             # load nibabel Method
             img = nib.load(img_path).get_fdata()
-            
-            # print(img.shape)
-            img = self.__crop_img(img)
-            # print(img.shape)
+
+            # img = self.__crop_img(img)
             
             if self.rotation > 0 and self.rotation <= 90:
               angle = random.randint(-self.rotation, self.rotation)
               img = ndimage.rotate(img, angle)
+            # print(type(img))
+            
+            img = self.__crop_img(img)
+            # print(type(img))
+            # print(img.shape)
     
             # # One more dimension for the channels
             img = np.expand_dims(img, axis=3)
