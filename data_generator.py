@@ -1,6 +1,7 @@
 import os
 import random
 from glob import glob
+import concurrent.futures
 
 import numpy as np
 from sklearn import preprocessing
@@ -124,44 +125,43 @@ class DataGenerator(data_utils.Sequence):
                 z1 +=1
             else:
                 break
-        # print(x0)
-        # print(x1)
-        # print(y0)
-        # print(y1)
-        # print(z0)
-        # print(z1)
-        # print(img.shape)
-        # print(img[x0:-x1,y0:-y1,z0:-z1].shape)
+
         return img[x0:-(1+x1),y0:-(1+y1),z0:-(1+z1)]
-        # return img[x0:-(1+x1),:,:]
+    
+    def __load_data(self, img_path):
+        # load nibabel Method
+        img = nib.load(img_path).get_fdata()
+
+        img = self.__crop_img(img)
+        
+        axes_list = [(0,1),(1,2),(0,2)]
+        axes = random.choice(axes_list)
+        if self.rotation > 0 and self.rotation <= 90:
+          angle = random.randint(-self.rotation, self.rotation)
+          img = ndimage.rotate(img, angle, axes=axes, reshape=True)
+        
+        img = self.__crop_img(img)
+
+        # # One more dimension for the channels
+        img = np.expand_dims(img, axis=3)
+
+        return img
 
     def __data_generation(self, Batch_ids, Batch_Y):
         'Generates data containing batch_size samples'
         # Initialization
         X = np.zeros((self.batch_size, *self.dim, self.n_channels))
 
-        # Generate data
-        for c, i in enumerate(Batch_ids): #count, element
-            case_path = os.path.join(self.data_path, self.label_encoder.inverse_transform([Batch_Y[c]])[0])
-            img_path = os.path.join(case_path, i);
-
-            # load nibabel Method
-            img = nib.load(img_path).get_fdata()
-
-            # img = self.__crop_img(img)
-            
-            if self.rotation > 0 and self.rotation <= 90:
-              angle = random.randint(-self.rotation, self.rotation)
-              img = ndimage.rotate(img, angle)
-            # print(type(img))
-            
-            img = self.__crop_img(img)
-            # print(type(img))
-            # print(img.shape)
-    
-            # # One more dimension for the channels
-            img = np.expand_dims(img, axis=3)
-            # print(img.shape)
-
-            X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = []
+            # Generate data
+            for c, i in enumerate(Batch_ids): #count, element
+                case_path = os.path.join(self.data_path, self.label_encoder.inverse_transform([Batch_Y[c]])[0])
+                img_path = os.path.join(case_path, i);
+                futures.append(executor.submit(self.__load_data, img_path=img_path))
+                
+            for c, future in enumerate(concurrent.futures.as_completed(futures)):
+                img = future.result()
+                X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
+        
         return X/np.max(X) #We normalize between 0 an 1
