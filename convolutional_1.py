@@ -34,12 +34,12 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 10
+batch_size = 1
 epochs = 100
 # frozen_epochs = 100
 num_classes = 3
-shape=90
-images_shape = (shape,shape,int(shape*0.6))
+shape=160
+images_shape = (shape,shape,int(shape*0.8))
 n_channels = 1
 
 
@@ -77,15 +77,17 @@ callbacks_list = [
             #               mode='auto'),
             ReduceLROnPlateau(monitor='val_loss',
                               factor=0.1,
-                              patience=2,
+                              patience=3,
                               min_lr=0.000001,
                               verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
-                            monitor='val_accuracy',
+                            # monitor='val_accuracy',
+                            # mode='max',
+                            monitor='val_loss',
+                            mode='min',
                             verbose=1,
                             save_best_only=True,
-                            save_weights_only = True,
-                            mode='max'),
+                            save_weights_only = True),
             CSVLogger( project_dir + 'training.log',
                       separator=',',
                       append=False)
@@ -131,7 +133,7 @@ model.add(Activation('softmax'))
 
 model.summary()
 
-opt = Adam(0.01, decay=1e-6)
+opt = Adam(0.0001, decay=1e-6)
 
 
 # Compile the model
