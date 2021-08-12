@@ -145,6 +145,10 @@ class DataGenerator(data_utils.Sequence):
         # # One more dimension for the channels
         img = np.expand_dims(img, axis=3)
 
+        #NORMALIZATION
+        img = img/np.max(img) #We normalize between 0 an 1
+        img = (img - np.mean(img)) / np.std(img) #whitening
+
         return img
 
     def __data_generation(self, Batch_ids, Batch_Y):
@@ -163,5 +167,8 @@ class DataGenerator(data_utils.Sequence):
             for c, future in enumerate(concurrent.futures.as_completed(futures)):
                 img = future.result()
                 X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
+            
+
+        return X
         
-        return X/np.max(X) #We normalize between 0 an 1
+        # return X/np.max(X) #We normalize between 0 an 1

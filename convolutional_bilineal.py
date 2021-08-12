@@ -10,9 +10,10 @@ import matplotlib.pyplot as plt
 # from keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.layers import BatchNormalization as BN
 # from keras.layers import GaussianNoise as GN
-from tensorflow.keras.layers import Dense, Flatten, Conv3D, MaxPooling3D, MaxPool3D, GlobalAveragePooling3D, Dropout, Activation
+from tensorflow.keras.layers import Dense, Lambda, Flatten, Conv3D, MaxPooling3D, MaxPool3D, GlobalAveragePooling3D, Dropout, Activation
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, CSVLogger
+from tensorflow.keras.models import Model
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
 # from tensorflow.python.keras.utils import data_utils
@@ -34,11 +35,11 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 2
+batch_size = 1
 epochs = 100
 # frozen_epochs = 100
 num_classes = 3
-shape=160
+shape=200
 images_shape = (shape,shape,int(shape*0.8))
 n_channels = 1
 
@@ -97,56 +98,37 @@ callbacks_list = [
 
 # **MODEL**
 
-def CBGN(model,filters,lname,ishape=0):
-  if (ishape!=0):
-    model.add(Conv3D(filters=filters, kernel_size=2, activation="relu",
-                 input_shape=ishape, kernel_initializer='he_uniform'))
-  else:
-    model.add(Conv3D(filters=filters, kernel_size=2, activation="relu", kernel_initializer='he_uniform'))
-
-  model.add(MaxPool3D(pool_size=2,name=lname))
-  model.add(BN())
+model1 = VGG19(include_top=False, weights="imagenet", input_shape=x_train_shape)
+# model1 = InceptionV3(input_shape=x_train_shape, weights='imagenet', include_top=False)
+for layer in model1.layers[:]:
+  layer.trainable = False
   
-  return model
+# Check the trainable status
+for layer in model1.layers:
+  print(layer, layer.trainable, layer.name)
+
+model1.summary()
+
+def outer_product(x):
+  phi_I = tf.einsum('ijkm,ijkn->imn',x[0],x[1])		# Einstein Notation  [batch,31,31,depth] x [batch,31,31,depth] -> [batch,depth,depth]
+  phi_I = tf.reshape(phi_I,[-1,512*512])	        # Reshape from [batch_size,depth,depth] to [batch_size, depth*depth]
+  phi_I = tf.divide(phi_I,15*15)								  # Divide by feature map size [sizexsize]
+
+  y_ssqrt = tf.multiply(tf.sign(phi_I),tf.sqrt(tf.abs(phi_I)+1e-12))		# Take signed square root of phi_I
+  z_l2 = tf.nn.l2_normalize(y_ssqrt)								              # Apply l2 normalization
+  return z_l2
 
 
+conv=model1.get_layer('block5_conv3') 
+d1=Dropout(0.5)(conv.output)   ## Why??
+d2=Dropout(0.5)(conv.output)   ## Why??
 
-# # Create the model
-# model = Sequential()
-# model.add(Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform', input_shape=(images_shape[0], images_shape[1], images_shape[2], 1)))
-# model.add(MaxPooling3D(pool_size=(2, 2, 2)))
-# model.add(BN(center=True, scale=True))
-# model.add(Dropout(0.5))
-# model.add(Conv3D(64, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform'))
-# model.add(MaxPooling3D(pool_size=(2, 2, 2)))
-# model.add(BN(center=True, scale=True))
-# model.add(Dropout(0.5))
-# model.add(Flatten())
-# model.add(Dense(256, activation='relu', kernel_initializer='he_uniform'))
-# model.add(Dense(256, activation='relu', kernel_initializer='he_uniform'))
-# model.add(Dense(num_classes, activation='softmax'))
+x = Lambda(outer_product, name='outer_product')([d1,d2])
 
-# model.summary()
+predictions=Dense(num_classes, activation='softmax', name='predictions')(x)
 
+model = Model(inputs=model1.input, outputs=predictions)
 
-model = Sequential()
-
-model=CBGN(model,32,'conv_model_1',(images_shape[0], images_shape[1], images_shape[2], 1))
-model=CBGN(model,64,'conv_model_2')
-model=CBGN(model,128,'conv_modeL_3')
-model=CBGN(model,256,'conv_modeL_4')
-model=CBGN(model,512,'conv_model_5')
-
-model.add(Flatten())
-# model.add(GlobalAveragePooling3D())
-model.add(Dense(units=512, activation="relu", kernel_initializer='he_uniform'))
-model.add(BN())
-model.add(Dropout(0.5))
-model.add(Dense(num_classes))
-model.add(Activation('softmax'))
-# model.add(Activation('sigmoid'))
-
-model.summary()
 
 opt = Adam(0.0001)
 
