@@ -1,3 +1,5 @@
+#!/home/pmeslaf/.conda/envs/pruebas_env/bin/python
+
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
 # os.environ['CUDA_VISIBLE_DEVICES']='1' 
@@ -38,7 +40,7 @@ batch_size = 1
 epochs = 100
 # frozen_epochs = 100
 num_classes = 3
-shape=160
+shape=170
 images_shape = (shape,shape,int(shape*0.8))
 n_channels = 1
 
@@ -52,7 +54,7 @@ training_generator = DataGenerator(data_path=project_dir + '/Train/',
                                    n_channels = n_channels,
                                    num_classes=num_classes,
                                    shuffle=True,
-                                   rotation=60)
+                                   rotation=360)
 valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
                                    dim=images_shape,
                                    batch_size = batch_size,
@@ -133,7 +135,7 @@ model.add(Activation('softmax'))
 
 model.summary()
 
-opt = Adam(0.0001, decay=1e-6)
+opt = Adam(0.00001, decay=1e-6)
 
 
 # Compile the model
@@ -142,10 +144,11 @@ model.compile(loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Fit data to model
-# model.load_weights(checkpoint_path)
+# model.load_weights(project_dir + 'model_.07-1.037995.m5')
 history = model.fit(training_generator,
                     epochs=epochs,
                     verbose=1,
+                    # initial_epoch=7,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,
                     workers=12,

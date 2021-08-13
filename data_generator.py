@@ -29,7 +29,7 @@ class DataGenerator(data_utils.Sequence):
         self.n_channels = n_channels
         self.num_classes = num_classes
         self.shuffle = shuffle
-        self.rotation = rotation
+        self.rotation = rotation if rotation<=360 else rotation % 360
         self.classes = ["AD", "CN", "MCI"]
         self.label_encoder = self.__set_label_encoder(self.classes)
         self.list_IDs, self.Y_labels = self.__get_index(data_path)
@@ -136,7 +136,7 @@ class DataGenerator(data_utils.Sequence):
         
         axes_list = [(0,1),(1,2),(0,2)]
         axes = random.choice(axes_list)
-        if self.rotation > 0 and self.rotation <= 90:
+        if self.rotation > 0:
           angle = random.randint(-self.rotation, self.rotation)
           img = ndimage.rotate(img, angle, axes=axes, reshape=True)
         
@@ -146,7 +146,7 @@ class DataGenerator(data_utils.Sequence):
         img = np.expand_dims(img, axis=3)
 
         #NORMALIZATION
-        img = img/np.max(img) #We normalize between 0 an 1
+        # img = img/np.max(img) #We normalize between 0 an 1
         img = (img - np.mean(img)) / np.std(img) #whitening
 
         return img
@@ -160,12 +160,12 @@ class DataGenerator(data_utils.Sequence):
             futures = []
             # Generate data
             for c, i in enumerate(Batch_ids): #count, element
-                case_path = os.path.join(self.data_path, self.label_encoder.inverse_transform([Batch_Y[c]])[0])
+                case_path = os.path.join(self.data_path,
+                                        self.label_encoder.inverse_transform([Batch_Y[c]])[0])
                 img_path = os.path.join(case_path, i);
-                futures.append(executor.submit(self.__load_data, img_path=img_path))
-                
-            for c, future in enumerate(concurrent.futures.as_completed(futures)):
-                img = future.result()
+
+                img = self.__load_data(img_path=img_path)
+
                 X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
             
 

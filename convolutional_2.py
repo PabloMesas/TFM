@@ -131,11 +131,11 @@ def CBGN(model,filters,lname,ishape=0):
 
 model = Sequential()
 
-model=CBGN(model,32,'conv_model_1',(images_shape[0], images_shape[1], images_shape[2], 1))
-model=CBGN(model,64,'conv_model_2')
+model=CBGN(model,64,'conv_model_1',(images_shape[0], images_shape[1], images_shape[2], 1))
+# model=CBGN(model,64,'conv_model_2')
 model=CBGN(model,128,'conv_modeL_3')
 model=CBGN(model,256,'conv_modeL_4')
-model=CBGN(model,512,'conv_model_5')
+# model=CBGN(model,512,'conv_model_5')
 
 model.add(Flatten())
 # model.add(GlobalAveragePooling3D())
