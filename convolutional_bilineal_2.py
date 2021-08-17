@@ -40,14 +40,18 @@ for gpu_instance in physical_devices:
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
 batch_size = 4
-epochs = 100
-frozen_epochs=30
+epochs = 140
+frozen_epochs=40
 shape=110
-n_slice_row = 7
+n_slice_row = 5
 classes = ["AD", "CN", "MCI"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape*n_slice_row, shape*n_slice_row, n_channels*3)
+
+import datetime
+x = datetime.datetime.today()
+name_code = str(n_slice_row) + 'x' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M-%S")
 
 
 project_dir = "/home/pmeslaf/TFM/DATA/"
@@ -61,7 +65,7 @@ training_generator = DataGenerator2D(data_path=project_dir + '/Train/',
                                    classes = classes,
                                    shuffle=True,
                                    RGB=True,
-                                   rotation=300)
+                                   rotation=10)
 valid_generator = DataGenerator2D(data_path=project_dir + '/Validation/',
                                    slice_size_dim=shape,
                                    n_slice_row=n_slice_row,
@@ -80,7 +84,7 @@ test_generator = DataGenerator2D(data_path=project_dir + '/Test/',
                                    shuffle=True)
 
 # # Create a callback that saves the model's weights
-checkpoint_path = project_dir + 'model_frozen.{epoch:02d}-{val_loss:.6f}.m5'
+checkpoint_path = project_dir + 'model_frozen_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
 callbacks_list = [
             # EarlyStopping(monitor='loss',
             #               min_delta=0,
@@ -93,14 +97,14 @@ callbacks_list = [
                               min_lr=0.000001,
                               verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
-                            # monitor='val_accuracy',
-                            # mode='max',
-                            monitor='val_loss',
-                            mode='min',
+                            monitor='val_accuracy',
+                            mode='max',
+                            # monitor='val_loss',
+                            # mode='min',
                             verbose=1,
                             save_best_only=True,
                             save_weights_only = True),
-            CSVLogger( project_dir + 'training_frozen.log',
+            CSVLogger( project_dir + 'training_frozen_'+name_code+'.log',
                       separator=',',
                       append=False)
     ]
@@ -122,7 +126,7 @@ model1.summary()
 
 def outer_product(x):
   phi_I = tf.einsum('ijkm,ijkn->imn',x[0],x[1])		# Einstein Notation  [batch,31,31,depth] x [batch,31,31,depth] -> [batch,depth,depth]
-  phi_I = tf.reshape(phi_I,[-1,512*512])	        # Reshape from [batch_size,depth,depth] to [batch_size, depth*depth]
+  phi_I = tf.reshape(phi_I,[-1,256*256])	        # Reshape from [batch_size,depth,depth] to [batch_size, depth*depth]
   phi_I = tf.divide(phi_I,15*15)								  # Divide by feature map size [sizexsize]
 
   y_ssqrt = tf.multiply(tf.sign(phi_I),tf.sqrt(tf.abs(phi_I)+1e-12))		# Take signed square root of phi_I
@@ -130,9 +134,9 @@ def outer_product(x):
   return z_l2
 
 
-conv=model1.get_layer('block5_conv3') 
-d1=Dropout(0.5)(conv.output)   ## Why??
-d2=Dropout(0.5)(conv.output)   ## Why??
+conv=model1.get_layer('block3_conv2') 
+d1=Dropout(0.7)(conv.output)   ## Why??
+d2=Dropout(0.7)(conv.output)   ## Why??
 
 x = Lambda(outer_product, name='outer_product')([d1,d2])
 
@@ -141,27 +145,27 @@ predictions=Dense(num_classes, activation='softmax', name='predictions')(x)
 model = Model(inputs=model1.input, outputs=predictions)
 model.summary()
 
-# opt = Adam(0.01)
+opt = Adam(0.01)
 
 
-# # Compile the model
-# model.compile(loss='categorical_crossentropy',
-#               optimizer=opt,
-#               metrics=['accuracy'])
+# Compile the model
+model.compile(loss='categorical_crossentropy',
+              optimizer=opt,
+              metrics=['accuracy'])
 
-# # Fit data to model frozen
-# history = model.fit(x=training_generator,
-#                     epochs=frozen_epochs,
-#                     verbose=1,
-#                     callbacks=callbacks_list,
-#                     use_multiprocessing=True,
-#                     workers=12,
-#                     validation_data=valid_generator)
+# Fit data to model frozen
+history = model.fit(x=training_generator,
+                    epochs=frozen_epochs,
+                    verbose=1,
+                    callbacks=callbacks_list,
+                    use_multiprocessing=True,
+                    workers=12,
+                    validation_data=valid_generator)
 
 
 #####DEFROST
 # # Create a callback that saves the model's weights
-checkpoint_path = project_dir + 'model_defrost.{epoch:02d}-{val_loss:.6f}.m5'
+checkpoint_path = project_dir + 'model_defrost_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
 callbacks_list = [
             # EarlyStopping(monitor='loss',
             #               min_delta=0,
@@ -174,20 +178,20 @@ callbacks_list = [
                               min_lr=0.000001,
                               verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
-                            # monitor='val_accuracy',
-                            # mode='max',
-                            monitor='val_loss',
-                            mode='min',
+                            monitor='val_accuracy',
+                            mode='max',
+                            # monitor='val_loss',
+                            # mode='min',
                             verbose=1,
                             save_best_only=True,
                             save_weights_only = True),
-            CSVLogger( project_dir + 'training_defrost.log',
+            CSVLogger( project_dir + 'training_defrost_'+name_code+'.log',
                       separator=',',
                       append=False)
     ]
 
-for layer in model.layers[:]:
-  layer.trainable = True
+# for layer in model.layers[:]:
+#   layer.trainable = True
   
 # Check the trainable status
 for layer in model.layers:
@@ -195,13 +199,13 @@ for layer in model.layers:
 
 model.summary()
 
-opt = Adam(0.0000001, decay=1e-6)
+opt = Adam(0.00001, decay=1e-6)
 
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-model.load_weights(project_dir + 'model_frozen.05-1.020486.m5')
-K.set_value(model.optimizer.learning_rate, 0.000001)
+model.load_weights(project_dir + 'model_defrost_5x150_16-08-2021_00-00-00.22-0.999641.m5')
+K.set_value(model.optimizer.learning_rate, 0.00001)
 
 history = model.fit(x=training_generator,
                     epochs=epochs,

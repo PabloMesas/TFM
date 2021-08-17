@@ -7,29 +7,37 @@ import numpy as np
 from sklearn import preprocessing
 from scipy import ndimage
 from skimage.transform import resize
+from skimage.util import montage 
 import nibabel as nib
 
 from tensorflow.python.keras.utils import data_utils
 from tensorflow.keras.utils import to_categorical
 
-class DataGenerator(data_utils.Sequence):
+class DataGenerator2D(data_utils.Sequence):
     'Generates data for Keras'
     def __init__(self,
                     data_path,
-                    dim=(192,192,160),
+                    slice_size_dim=160,
+                    n_slice_row = 7,
                     batch_size = 1,
                     n_channels = 1,
-                    num_classes=3,
                     classes = ["AD", "CN", "MCI"],
                     shuffle=True,
+                    RGB=False,
                     rotation=0):
         'Initialization'
         self.data_path = data_path
-        self.dim = dim
+        self.dim = (n_slice_row*slice_size_dim, n_slice_row*slice_size_dim)
+        self.slice_size_dim=slice_size_dim
+        self.n_slice_row = n_slice_row
         self.batch_size = batch_size
-        self.n_channels = n_channels
-        self.num_classes = num_classes
+        if RGB:
+            self.n_channels = 3
+        else:
+            self.n_channels = n_channels
+        self.num_classes = len(classes)
         self.shuffle = shuffle
+        self.rgb_mode = RGB
         self.rotation = rotation if rotation<=360 else rotation % 360
         self.classes = classes
         self.label_encoder = self.__set_label_encoder(self.classes)
@@ -135,41 +143,39 @@ class DataGenerator(data_utils.Sequence):
 
         img = self.__crop_img(img)
         
-        axes_list = [(0,1),(1,2),(0,2)]
-        axes = random.choice(axes_list)
         if self.rotation > 0:
           angle = random.randint(-self.rotation, self.rotation)
-          img = ndimage.rotate(img, angle, axes=axes, reshape=True)
+          img = ndimage.rotate(img, angle, axes=(1,2), reshape=True)
         
         img = self.__crop_img(img)
-
-        # # One more dimension for the channels
-        img = np.expand_dims(img, axis=3)
+        img = img[30:-30]
 
         #NORMALIZATION
         # img = img/np.max(img) #We normalize between 0 an 1
         img = (img - np.mean(img)) / np.std(img) #whitening
+        img = resize(img, (self.n_slice_row*self.n_slice_row, self.slice_size_dim, self.slice_size_dim))
 
-        return img
+        # One more dimension for the channels
+        img = montage(img)
+
+        if self.rgb_mode:
+            return np.stack((img,)*3, axis=-1)
+        else:
+            return np.expand_dims(img, axis=2)
 
     def __data_generation(self, Batch_ids, Batch_Y):
         'Generates data containing batch_size samples'
         # Initialization
         X = np.zeros((self.batch_size, *self.dim, self.n_channels))
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = []
-            # Generate data
-            for c, i in enumerate(Batch_ids): #count, element
-                case_path = os.path.join(self.data_path,
-                                        self.label_encoder.inverse_transform([Batch_Y[c]])[0])
-                img_path = os.path.join(case_path, i);
+        # Generate data
+        for c, i in enumerate(Batch_ids): #count, element
+            case_path = os.path.join(self.data_path,
+                                    self.label_encoder.inverse_transform([Batch_Y[c]])[0])
+            img_path = os.path.join(case_path, i);
 
-                img = self.__load_data(img_path=img_path)
+            img = self.__load_data(img_path=img_path)
 
-                X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
-            
+            X[c,:,:,:] = img #resize(img, (self.dim[0], self.dim[1], 1))
 
         return X
-        
-        # return X/np.max(X) #We normalize between 0 an 1

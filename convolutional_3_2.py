@@ -1,5 +1,3 @@
-#!/home/pmeslaf/.conda/envs/pruebas_env/bin/python
-
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
 os.environ['CUDA_VISIBLE_DEVICES']='0' 
@@ -29,19 +27,19 @@ from skimage.transform import rotate
 # from sklearn import preprocessing
 
 from glob import glob
-
+import pandas as pd
 import SimpleITK as sitk
 
 physical_devices = tf.config.list_physical_devices('GPU') 
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 1
-epochs = 100
+batch_size = 8
+epochs = 300
 # frozen_epochs = 100
-num_classes = 2
-shape=150
-images_shape = (shape,shape,int(shape*0.8))
+num_classes = 3
+shape=160
+images_shape = (shape,shape,int(shape))
 n_channels = 1
 
 
@@ -54,7 +52,7 @@ training_generator = DataGenerator(data_path=project_dir + '/Train/',
                                    n_channels = n_channels,
                                    num_classes=num_classes,
                                    shuffle=True,
-                                   rotation=5)
+                                   rotation=30)
 valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
                                    dim=images_shape,
                                    batch_size = batch_size,
@@ -79,7 +77,7 @@ callbacks_list = [
             #               mode='auto'),
             ReduceLROnPlateau(monitor='val_loss',
                               factor=0.1,
-                              patience=3,
+                              patience=5,
                               min_lr=0.000001,
                               verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
@@ -90,7 +88,7 @@ callbacks_list = [
                             verbose=1,
                             save_best_only=True,
                             save_weights_only = True),
-            CSVLogger( project_dir + 'training.log',
+            CSVLogger( project_dir + 'training_3classes.log',
                       separator=',',
                       append=False)
     ]
@@ -114,24 +112,25 @@ def CBGN(model,filters,lname,ishape=0):
 model = Sequential()
 
 model=CBGN(model,8,'conv_model_1',(images_shape[0], images_shape[1], images_shape[2], 1))
-model=CBGN(model,16,'conv_model_2')
-model=CBGN(model,32,'conv_modeL_3')
-model=CBGN(model,64,'conv_modeL_4')
+model=CBGN(model,8,'conv_model_2')
 model.add(MaxPool3D(pool_size=2))
-model.add(BN())
-model=CBGN(model,128,'conv_model_5')
+model=CBGN(model,16,'conv_model_3')
+model=CBGN(model,16,'conv_model_4')
 model.add(MaxPool3D(pool_size=2))
-model.add(BN())
-model=CBGN(model,256,'conv_model_6')
+model=CBGN(model,32,'conv_model_5')
+model=CBGN(model,32,'conv_model_6')
+model=CBGN(model,32,'conv_model_7')
 model.add(MaxPool3D(pool_size=2))
-model.add(BN())
-model=CBGN(model,512,'conv_model_6')
+model=CBGN(model,64,'conv_model_8')
+model=CBGN(model,64,'conv_model_9')
+model=CBGN(model,64,'conv_model_10')
 model.add(MaxPool3D(pool_size=2))
+model.add(Flatten())
+model.add(Dense(units=128))
 model.add(BN())
-
-model.add(GlobalAveragePooling3D())
-model.add(Dense(units=512, activation="relu"))
 model.add(Dropout(0.5))
+model.add(Dense(units=64, activation="relu"))
+
 model.add(Dense(num_classes))
 model.add(Activation('softmax'))
 # model.add(Activation('sigmoid'))
@@ -147,11 +146,11 @@ model.compile(loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Fit data to model
-# model.load_weights(project_dir + 'model_.07-1.037995.m5')
+# model.load_weights(project_dir + 'model_.197-0.546914.m5')
 history = model.fit(training_generator,
                     epochs=epochs,
                     verbose=1,
-                    # initial_epoch=7,
+                    # initial_epoch=100,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,
                     workers=12,
@@ -167,5 +166,17 @@ plt.savefig(project_dir + 'evolution_training.png')
 # plt.show()
 
 
-# model.load_weights(checkpoint_path_defrost)
-# predictions = model.evaluate(test_generator)
+# history = pd.read_csv(project_dir + 'training.log', sep=',', engine='python')
+# plt.plot(history['accuracy'])
+# plt.plot(history['val_accuracy'])
+# plt.title('model accuracy')
+# plt.ylabel('accuracy')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'val'], loc='upper left')
+# plt.savefig(project_dir + 'evolution_training.png')
+
+
+predictions = model.evaluate(test_generator)
+
+print('Test loss:', predictions[0])
+print('Test accuracy:', predictions[1])
