@@ -39,19 +39,19 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 8
+batch_size = 4
 epochs = 140
 frozen_epochs=40
 shape=110
-n_slice_row = 5
-classes = ["AD", "CN", "MCI"]
+n_slice_row = 4
+classes = ["CN", "MCI"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape*n_slice_row, shape*n_slice_row, n_channels*3)
 
 import datetime
 x = datetime.datetime.today()
-name_code = str(n_slice_row) + 'x' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M")
+name_code = 'Inception_MCICN' + str(n_slice_row) + 'x' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M-%S")
 
 
 project_dir = "/home/pmeslaf/TFM/DATA/"
@@ -83,58 +83,58 @@ test_generator = DataGenerator2D(data_path=project_dir + '/Test/',
                                    RGB=True,
                                    shuffle=True)
 
-# # # Create a callback that saves the model's weights
-# checkpoint_path = project_dir + 'model_frozen_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
-# callbacks_list = [
-#             # EarlyStopping(monitor='loss',
-#             #               min_delta=0,
-#             #               patience=2,
-#             #               verbose=1,
-#             #               mode='auto'),
-#             ReduceLROnPlateau(monitor='val_loss',
-#                               factor=0.1,
-#                               patience=10,
-#                               min_lr=0.000001,
-#                               verbose=1),
-#             ModelCheckpoint(filepath=checkpoint_path,
-#                             monitor='val_accuracy',
-#                             mode='max',
-#                             # monitor='val_loss',
-#                             # mode='min',
-#                             verbose=1,
-#                             save_best_only=True,
-#                             save_weights_only = True),
-#             CSVLogger( project_dir + 'training_frozen_'+name_code+'.log',
-#                       separator=',',
-#                       append=False)
-#     ]
+# # Create a callback that saves the model's weights
+checkpoint_path = project_dir + 'model_frozen_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
+callbacks_list = [
+            # EarlyStopping(monitor='loss',
+            #               min_delta=0,
+            #               patience=2,
+            #               verbose=1,
+            #               mode='auto'),
+            ReduceLROnPlateau(monitor='val_loss',
+                              factor=0.1,
+                              patience=10,
+                              min_lr=0.000001,
+                              verbose=1),
+            ModelCheckpoint(filepath=checkpoint_path,
+                            monitor='val_accuracy',
+                            mode='max',
+                            # monitor='val_loss',
+                            # mode='min',
+                            verbose=1,
+                            save_best_only=True,
+                            save_weights_only = True),
+            CSVLogger( project_dir + 'training_frozen_'+name_code+'.log',
+                      separator=',',
+                      append=False)
+    ]
 
 
 
 # **MODEL**
 
-model1 = VGG16(include_top=False, weights="imagenet", input_shape=images_shape)
-# model1 = InceptionV3(input_shape=x_train_shape, weights='imagenet', include_top=False)
-# for layer in model1.layers[:]:
-#   layer.trainable = False
+# model1 = VGG16(include_top=False, weights="imagenet", input_shape=images_shape)
+model1 = InceptionV3(input_shape=images_shape, weights='imagenet', include_top=False)
+for layer in model1.layers[:]:
+  layer.trainable = False
   
-# # Check the trainable status
-# for layer in model1.layers:
-#   print(layer, layer.trainable, layer.name)
+# Check the trainable status
+for layer in model1.layers:
+  print(layer, layer.trainable, layer.name)
 
 model1.summary()
 
 def outer_product(x):
   phi_I = tf.einsum('ijkm,ijkn->imn',x[0],x[1])		# Einstein Notation  [batch,31,31,depth] x [batch,31,31,depth] -> [batch,depth,depth]
-  phi_I = tf.reshape(phi_I,[-1,256*256])	        # Reshape from [batch_size,depth,depth] to [batch_size, depth*depth]
-  phi_I = tf.divide(phi_I,15*15)								  # Divide by feature map size [sizexsize]
+  phi_I = tf.reshape(phi_I,[-1,2048*2048])	        # Reshape from [batch_size,depth,depth] to [batch_size, depth*depth]
+  phi_I = tf.divide(phi_I,12*12)								  # Divide by feature map size [sizexsize]
 
   y_ssqrt = tf.multiply(tf.sign(phi_I),tf.sqrt(tf.abs(phi_I)+1e-12))		# Take signed square root of phi_I
   z_l2 = tf.nn.l2_normalize(y_ssqrt)								              # Apply l2 normalization
   return z_l2
 
 
-conv=model1.get_layer('block3_conv2') 
+conv=model1.get_layer('mixed10') 
 d1=Dropout(0.7)(conv.output)   ## Why??
 d2=Dropout(0.7)(conv.output)   ## Why??
 
@@ -145,22 +145,22 @@ predictions=Dense(num_classes, activation='softmax', name='predictions')(x)
 model = Model(inputs=model1.input, outputs=predictions)
 model.summary()
 
-# opt = Adam(0.01)
+opt = Adam(0.01)
 
 
-# # Compile the model
-# model.compile(loss='categorical_crossentropy',
-#               optimizer=opt,
-#               metrics=['accuracy'])
+# Compile the model
+model.compile(loss='categorical_crossentropy',
+              optimizer=opt,
+              metrics=['accuracy'])
 
-# # Fit data to model frozen
-# history = model.fit(x=training_generator,
-#                     epochs=frozen_epochs,
-#                     verbose=1,
-#                     callbacks=callbacks_list,
-#                     use_multiprocessing=True,
-#                     workers=12,
-#                     validation_data=valid_generator)
+# Fit data to model frozen
+history = model.fit(x=training_generator,
+                    epochs=frozen_epochs,
+                    verbose=1,
+                    callbacks=callbacks_list,
+                    use_multiprocessing=True,
+                    workers=12,
+                    validation_data=valid_generator)
 
 
 #####DEFROST
@@ -190,21 +190,21 @@ callbacks_list = [
                       append=False)
     ]
 
-# for layer in model.layers[:]:
-#   layer.trainable = True
+for layer in model.layers[:]:
+  layer.trainable = True
   
-# # Check the trainable status
-# for layer in model.layers:
-#   print(layer, layer.trainable)
+# Check the trainable status
+for layer in model.layers:
+  print(layer, layer.trainable)
 
 model.summary()
 
 opt = Adam(0.00001, decay=1e-6)
 
-model.load_weights(project_dir + 'model_frozen_5x110_17-08-2021_10-36-27.34-1.046136.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
+# model.load_weights(project_dir + 'model_defrost_5x150_16-08-2021_00-00-00.22-0.999641.m5')
 K.set_value(model.optimizer.learning_rate, 0.00001)
 
 history = model.fit(x=training_generator,

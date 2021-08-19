@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='1' 
+os.environ['CUDA_VISIBLE_DEVICES']='0' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -39,19 +39,19 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 4
+batch_size = 2
 epochs = 140
 frozen_epochs=40
-shape=110
+shape=150
 n_slice_row = 4
-classes = ["AD", "CN", "MCI"]
+classes = ["CN", "MCI"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape*n_slice_row, shape*n_slice_row, n_channels*3)
 
 import datetime
 x = datetime.datetime.today()
-name_code = str(n_slice_row) + 'x' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M-%S")
+name_code = 'MCICN' + str(n_slice_row) + 'x' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M-%S")
 
 
 project_dir = "/home/pmeslaf/TFM/DATA/"
@@ -190,8 +190,8 @@ callbacks_list = [
                       append=False)
     ]
 
-# for layer in model.layers[:]:
-#   layer.trainable = True
+for layer in model.layers[:]:
+  layer.trainable = True
   
 # Check the trainable status
 for layer in model.layers:
@@ -204,7 +204,7 @@ opt = Adam(0.00001, decay=1e-6)
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-model.load_weights(project_dir + 'model_defrost_5x150_16-08-2021_00-00-00.22-0.999641.m5')
+# model.load_weights(project_dir + 'model_defrost_5x150_16-08-2021_00-00-00.22-0.999641.m5')
 K.set_value(model.optimizer.learning_rate, 0.00001)
 
 history = model.fit(x=training_generator,

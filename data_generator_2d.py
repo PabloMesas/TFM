@@ -148,7 +148,7 @@ class DataGenerator2D(data_utils.Sequence):
           img = ndimage.rotate(img, angle, axes=(1,2), reshape=True)
         
         img = self.__crop_img(img)
-        img = img[30:-30]
+        img = img[20:-30]
 
         #NORMALIZATION
         # img = img/np.max(img) #We normalize between 0 an 1
