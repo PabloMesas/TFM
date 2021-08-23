@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='0' 
+# os.environ['CUDA_VISIBLE_DEVICES']='0' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -18,6 +18,7 @@ from tensorflow.keras.models import Model
 # from tensorflow.keras.applications.vgg16 import VGG16
 # from tensorflow.keras.applications.vgg19 import VGG19
 from vgg19 import brainVGG19
+from vgg16 import brainVGG16
 from tensorflow.keras import backend as K
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
@@ -36,9 +37,9 @@ from glob import glob
 
 import SimpleITK as sitk
 
-physical_devices = tf.config.list_physical_devices('GPU') 
-for gpu_instance in physical_devices: 
-    tf.config.experimental.set_memory_growth(gpu_instance, True)
+# physical_devices = tf.config.list_physical_devices('GPU') 
+# for gpu_instance in physical_devices: 
+#     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
 batch_size = 3
 epochs = 140
@@ -114,76 +115,78 @@ callbacks_list = [
 
 # **MODEL**
 
-model = brainVGG19(input_shape=images_shape, frozen=True, pretrained=True, n_classes=num_classes)
+model = brainVGG16(input_shape=images_shape, frozen=True, pretrained=True, n_classes=num_classes)
+# model = brainVGG19(input_shape=images_shape, frozen=True, pretrained=True, n_classes=num_classes)
 
+model.summary()
 
 opt = Adam(0.000001)
 
 
-# Compile the model
-model.compile(loss='categorical_crossentropy',
-              optimizer=opt,
-              metrics=['accuracy'])
+# # Compile the model
+# model.compile(loss='categorical_crossentropy',
+#               optimizer=opt,
+#               metrics=['accuracy'])
 
-# Fit data to model frozen
-history = model.fit(x=training_generator,
-                    epochs=frozen_epochs,
-                    verbose=1,
-                    callbacks=callbacks_list,
-                    use_multiprocessing=True,
-                    workers=12,
-                    validation_data=valid_generator)
+# # Fit data to model frozen
+# history = model.fit(x=training_generator,
+#                     epochs=frozen_epochs,
+#                     verbose=1,
+#                     callbacks=callbacks_list,
+#                     use_multiprocessing=True,
+#                     workers=12,
+#                     validation_data=valid_generator)
 
 
-#####DEFROST
-# # Create a callback that saves the model's weights
-checkpoint_path = project_dir + 'model_defrost_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
-callbacks_list = [
-            # EarlyStopping(monitor='loss',
-            #               min_delta=0,
-            #               patience=2,
-            #               verbose=1,
-            #               mode='auto'),
-            ReduceLROnPlateau(monitor='val_loss',
-                              factor=0.1,
-                              patience=3,
-                              min_lr=0.000001,
-                              verbose=1),
-            ModelCheckpoint(filepath=checkpoint_path,
-                            monitor='val_accuracy',
-                            mode='max',
-                            # monitor='val_loss',
-                            # mode='min',
-                            verbose=1,
-                            save_best_only=True,
-                            save_weights_only = True),
-            CSVLogger( project_dir + 'training_defrost_'+name_code+'.log',
-                      separator=',',
-                      append=False)
-    ]
+# #####DEFROST
+# # # Create a callback that saves the model's weights
+# checkpoint_path = project_dir + 'model_defrost_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
+# callbacks_list = [
+#             # EarlyStopping(monitor='loss',
+#             #               min_delta=0,
+#             #               patience=2,
+#             #               verbose=1,
+#             #               mode='auto'),
+#             ReduceLROnPlateau(monitor='val_loss',
+#                               factor=0.1,
+#                               patience=3,
+#                               min_lr=0.000001,
+#                               verbose=1),
+#             ModelCheckpoint(filepath=checkpoint_path,
+#                             monitor='val_accuracy',
+#                             mode='max',
+#                             # monitor='val_loss',
+#                             # mode='min',
+#                             verbose=1,
+#                             save_best_only=True,
+#                             save_weights_only = True),
+#             CSVLogger( project_dir + 'training_defrost_'+name_code+'.log',
+#                       separator=',',
+#                       append=False)
+#     ]
 
-for layer in model.layers[:]:
-  layer.trainable = True
+# for layer in model.layers[:]:
+#   layer.trainable = True
   
-# # Check the trainable status
-# for layer in model.layers:
-#   print(layer, layer.trainable)
+# # # Check the trainable status
+# # for layer in model.layers:
+# #   print(layer, layer.trainable)
 
-model.summary()
+# model.summary()
 
-opt2 = Adam(0.000001, decay=1e-6)
+# opt2 = Adam(0.000001, decay=1e-6)
 
-# model.load_weights(project_dir + 'model_defrost_TransferVGG19_ADCN4x110_23-08-2021_11-05.13-0.586294.m5')
-model.compile(loss='categorical_crossentropy',
-              optimizer=opt2,
-              metrics=['accuracy'])
-K.set_value(model.optimizer.learning_rate, 0.000001)
+# # model.load_weights(project_dir + 'model_defrost_TransferVGG19_ADCN4x110_23-08-2021_11-05.13-0.586294.m5')
+# model.compile(loss='categorical_crossentropy',
+#               optimizer=opt2,
+#               metrics=['accuracy'])
+# K.set_value(model.optimizer.learning_rate, 0.000001)
 
-history = model.fit(x=training_generator,
-                    epochs=epochs,
-                    initial_epoch=frozen_epochs,
-                    verbose=1,
-                    callbacks=callbacks_list,
-                    use_multiprocessing=True,
-                    workers=12,
-                    validation_data=valid_generator)
+# history = model.fit(x=training_generator,
+#                     epochs=epochs,
+#                     initial_epoch=frozen_epochs,
+#                     verbose=1,
+#                     callbacks=callbacks_list,
+#                     use_multiprocessing=True,
+#                     workers=12,
+#                     validation_data=valid_generator)
