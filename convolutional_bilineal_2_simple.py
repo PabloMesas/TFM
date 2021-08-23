@@ -201,10 +201,10 @@ model.summary()
 
 opt = Adam(0.00001, decay=1e-6)
 
+# model.load_weights(project_dir + 'model_defrost_5x150_16-08-2021_00-00-00.22-0.999641.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-# model.load_weights(project_dir + 'model_defrost_5x150_16-08-2021_00-00-00.22-0.999641.m5')
 K.set_value(model.optimizer.learning_rate, 0.00001)
 
 history = model.fit(x=training_generator,

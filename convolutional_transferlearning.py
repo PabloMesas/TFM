@@ -39,9 +39,9 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 4
+batch_size = 3
 epochs = 140
-frozen_epochs=25
+frozen_epochs=10
 shape=110
 n_slice_row = 4
 classes = ["AD", "CN"]
@@ -51,7 +51,7 @@ images_shape = (shape*n_slice_row, shape*n_slice_row, n_channels*3)
 
 import datetime
 x = datetime.datetime.today()
-name_code = 'Inception_' + classes[0] + classes[1] + str(n_slice_row) + 'x' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M-%S")
+name_code = 'TransferVGG19_' + classes[0] + classes[1] + str(n_slice_row) + 'x' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M")
 
 
 project_dir = "/home/pmeslaf/TFM/DATA/"
@@ -114,7 +114,8 @@ callbacks_list = [
 # **MODEL**
 
 # model1 = VGG16(include_top=False, weights="imagenet", input_shape=images_shape)
-model1 = InceptionV3(input_shape=images_shape, weights='imagenet', include_top=False)
+model1 = VGG19(include_top=False, weights="imagenet", input_shape=images_shape)
+# model1 = InceptionV3(input_shape=images_shape, weights='imagenet', include_top=False)
 
 # for layer in model1.layers[:]:
 #   layer.trainable = False
@@ -122,28 +123,18 @@ model1 = InceptionV3(input_shape=images_shape, weights='imagenet', include_top=F
 
 # model1.summary()
 
-def outer_product(x):
-  phi_I = tf.einsum('ijkm,ijkn->imn',x[0],x[1])		# Einstein Notation  [batch,31,31,depth] x [batch,31,31,depth] -> [batch,depth,depth]
-  phi_I = tf.reshape(phi_I,[-1,768*768])	        # Reshape from [batch_size,depth,depth] to [batch_size, depth*depth]
-  phi_I = tf.divide(phi_I,25*25)								  # Divide by feature map size [sizexsize]
-
-  y_ssqrt = tf.multiply(tf.sign(phi_I),tf.sqrt(tf.abs(phi_I)+1e-12))		# Take signed square root of phi_I
-  z_l2 = tf.nn.l2_normalize(y_ssqrt)								              # Apply l2 normalization
-  return z_l2
+conv=model1.get_layer('block5_pool')
 
 
-conv=model1.get_layer('mixed3') 
-d1=Dropout(0.9)(conv.output)   ## Why??
-d2=Dropout(0.9)(conv.output)   ## Why??
-
-x = Lambda(outer_product, name='outer_product')([d1,d2])
-
+x=Flatten()(conv.output)
+x=Dense(units=256)(x)
+x =Dropout(0.6)(x)
 predictions=Dense(num_classes, activation='softmax', name='predictions')(x)
 
 model = Model(inputs=model1.input, outputs=predictions)
-# model.summary()
+model.summary()
 
-# opt = Adam(0.01)
+# opt = Adam(0.00001)
 
 
 # # Compile the model
@@ -172,7 +163,7 @@ callbacks_list = [
             #               mode='auto'),
             ReduceLROnPlateau(monitor='val_loss',
                               factor=0.1,
-                              patience=5,
+                              patience=3,
                               min_lr=0.000001,
                               verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
@@ -199,7 +190,7 @@ model.summary()
 
 opt2 = Adam(0.000001, decay=1e-6)
 
-model.load_weights(project_dir + 'model_frozen_Inception_ADCN4x110_20-08-2021_18-20-14.14-0.576638.m5')
+model.load_weights(project_dir + 'model_defrost_TransferVGG19_ADCN4x110_23-08-2021_11-05.13-0.586294.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt2,
               metrics=['accuracy'])
