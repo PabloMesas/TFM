@@ -14,9 +14,10 @@ from tensorflow.keras.layers import Dense, Lambda, Flatten, Conv3D, MaxPooling3D
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, CSVLogger
 from tensorflow.keras.models import Model
-from tensorflow.keras.applications.inception_v3 import InceptionV3
-from tensorflow.keras.applications.vgg16 import VGG16
-from tensorflow.keras.applications.vgg19 import VGG19
+# from tensorflow.keras.applications.inception_v3 import InceptionV3
+# from tensorflow.keras.applications.vgg16 import VGG16
+# from tensorflow.keras.applications.vgg19 import VGG19
+from vgg19 import brainVGG19
 from tensorflow.keras import backend as K
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
@@ -113,43 +114,25 @@ callbacks_list = [
 
 # **MODEL**
 
-# model1 = VGG16(include_top=False, weights="imagenet", input_shape=images_shape)
-model1 = VGG19(include_top=False, weights="imagenet", input_shape=images_shape)
-# model1 = InceptionV3(input_shape=images_shape, weights='imagenet', include_top=False)
-
-# for layer in model1.layers[:]:
-#   layer.trainable = False
-  
-
-# model1.summary()
-
-conv=model1.get_layer('block5_pool')
+model = brainVGG19(input_shape=images_shape, frozen=True, pretrained=True, n_classes=num_classes)
 
 
-x=Flatten()(conv.output)
-x=Dense(units=256)(x)
-x =Dropout(0.6)(x)
-predictions=Dense(num_classes, activation='softmax', name='predictions')(x)
-
-model = Model(inputs=model1.input, outputs=predictions)
-model.summary()
-
-# opt = Adam(0.00001)
+opt = Adam(0.000001)
 
 
-# # Compile the model
-# model.compile(loss='categorical_crossentropy',
-#               optimizer=opt,
-#               metrics=['accuracy'])
+# Compile the model
+model.compile(loss='categorical_crossentropy',
+              optimizer=opt,
+              metrics=['accuracy'])
 
-# # Fit data to model frozen
-# history = model.fit(x=training_generator,
-#                     epochs=frozen_epochs,
-#                     verbose=1,
-#                     callbacks=callbacks_list,
-#                     use_multiprocessing=True,
-#                     workers=12,
-#                     validation_data=valid_generator)
+# Fit data to model frozen
+history = model.fit(x=training_generator,
+                    epochs=frozen_epochs,
+                    verbose=1,
+                    callbacks=callbacks_list,
+                    use_multiprocessing=True,
+                    workers=12,
+                    validation_data=valid_generator)
 
 
 #####DEFROST
@@ -190,7 +173,7 @@ model.summary()
 
 opt2 = Adam(0.000001, decay=1e-6)
 
-model.load_weights(project_dir + 'model_defrost_TransferVGG19_ADCN4x110_23-08-2021_11-05.13-0.586294.m5')
+# model.load_weights(project_dir + 'model_defrost_TransferVGG19_ADCN4x110_23-08-2021_11-05.13-0.586294.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt2,
               metrics=['accuracy'])

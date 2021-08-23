@@ -2,7 +2,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Model
 
 def VoxCNN(
-    input_shape=(128,128,128),
+    input_shape=(128,128,128,1),
     n_classes=3,
     classifier_activation='softmax'
 ):
@@ -15,7 +15,7 @@ def VoxCNN(
         year={2017},
         pages={835-838}
         }
-        
+
     """
 
     #Input
@@ -74,6 +74,6 @@ def VoxCNN(
                         name='predictions')(x)
 
     # Create model.
-    model = Model(img_input, x, name='vgg19')
+    model = Model(img_input, x, name='VoxCNN')
 
     return model
