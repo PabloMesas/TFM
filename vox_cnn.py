@@ -27,14 +27,14 @@ def VoxCNN(
             img_input)
     x = layers.Conv3D(
         8, (3, 3, 3), activation='relu', padding='same', name='block1_conv2')(x)
-    x = layers.MaxPooling3D((2, 2, 2), strides=(2, 2), name='block1_pool')(x)
+    x = layers.MaxPooling3D((2, 2, 2), name='block1_pool')(x)
 
     # Block 2
     x = layers.Conv3D(
         16, (3, 3, 3), activation='relu', padding='same', name='block2_conv1')(x)
     x = layers.Conv3D(
         16, (3, 3, 3), activation='relu', padding='same', name='block2_conv2')(x)
-    x = layers.MaxPooling3D((2, 2, 2), strides=(2, 2), name='block2_pool')(x)
+    x = layers.MaxPooling3D((2, 2, 2), name='block2_pool')(x)
 
     # Block 3
     x = layers.Conv3D(
@@ -43,7 +43,7 @@ def VoxCNN(
         32, (3, 3, 3), activation='relu', padding='same', name='block3_conv2')(x)
     x = layers.Conv3D(
         32, (3, 3, 3), activation='relu', padding='same', name='block3_conv3')(x)
-    x = layers.MaxPooling3D((2, 2, 2), strides=(2, 2), name='block3_pool')(x)
+    x = layers.MaxPooling3D((2, 2, 2), name='block3_pool')(x)
 
     # Block 4
     x = layers.Conv3D(
@@ -52,7 +52,7 @@ def VoxCNN(
         64, (3, 3, 3), activation='relu', padding='same', name='block4_conv2')(x)
     x = layers.Conv3D(
         64, (3, 3, 3), activation='relu', padding='same', name='block4_conv3')(x)
-    x = layers.MaxPooling3D((2, 2, 2), strides=(2, 2), name='block4_pool')(x)
+    x = layers.MaxPooling3D((2, 2, 2), name='block4_pool')(x)
 
     # # Block 5
     # x = layers.Conv3D(
@@ -61,7 +61,7 @@ def VoxCNN(
     #     512, (3, 3, 3), activation='relu', padding='same', name='block5_conv2')(x)
     # x = layers.Conv3D(
     #     512, (3, 3, 3), activation='relu', padding='same', name='block5_conv3')(x)
-    # x = layers.MaxPooling3D((2, 2, 2), strides=(2, 2), name='block5_pool')(x)
+    # x = layers.MaxPooling3D((2, 2, 2), name='block5_pool')(x)
 
     # Classification block
     x = layers.Flatten(name='flatten')(x)
