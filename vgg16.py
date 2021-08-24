@@ -9,7 +9,7 @@ def brainVGG16(
     n_classes=3,
     classifier_activation='softmax'
 ):
-    """Instantiates the VGG19 architecture pretrained with ImageNet
+    """Instantiates the VGG16 architecture pretrained with ImageNet
         
     """
     if pretrained:
@@ -20,7 +20,7 @@ def brainVGG16(
     if frozen:
         for layer in model1.layers[:]:
             layer.trainable = False
-    model1.summary()
+
     conv = model1.get_layer('block5_pool')
 
     # Classification block

@@ -19,7 +19,6 @@ class DataGenerator(data_utils.Sequence):
                     dim=(192,192,160),
                     batch_size = 1,
                     n_channels = 1,
-                    num_classes=3,
                     classes = ["AD", "CN", "MCI"],
                     shuffle=True,
                     rotation=0):
@@ -28,7 +27,7 @@ class DataGenerator(data_utils.Sequence):
         self.dim = dim
         self.batch_size = batch_size
         self.n_channels = n_channels
-        self.num_classes = num_classes
+        self.num_classes = len(classes)
         self.shuffle = shuffle
         self.rotation = rotation if rotation<=360 else rotation % 360
         self.classes = classes
