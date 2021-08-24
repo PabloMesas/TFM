@@ -86,7 +86,7 @@ test_generator = DataGenerator2D(data_path=project_dir + '/Test/',
                                    shuffle=True)
 
 # # Create a callback that saves the model's weights
-checkpoint_path = project_dir + 'model_frozen_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
+checkpoint_path = project_dir + 'frozen_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
 callbacks_list = [
             # EarlyStopping(monitor='loss',
             #               min_delta=0,
@@ -140,7 +140,7 @@ history = model.fit(x=training_generator,
 
 #####DEFROST
 # # Create a callback that saves the model's weights
-checkpoint_path = project_dir + 'model_defrost_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
+checkpoint_path = project_dir + 'defrost_'+name_code+'.{epoch:02d}-{val_loss:.6f}.m5'
 callbacks_list = [
             # EarlyStopping(monitor='loss',
             #               min_delta=0,

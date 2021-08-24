@@ -31,6 +31,6 @@ def brainVGG16(
     x = layers.Dense(64, activation='relu', name='fc2')(x)
     predictions = layers.Dense(n_classes, activation=classifier_activation, name='predictions')(x)
 
-    model = Model(inputs=model1.input, outputs=predictions, name='vgg19')
+    model = Model(inputs=model1.input, outputs=predictions, name='vgg16')
 
     return model

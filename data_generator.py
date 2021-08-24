@@ -21,6 +21,8 @@ class DataGenerator(data_utils.Sequence):
                     n_channels = 1,
                     classes = ["AD", "CN", "MCI"],
                     shuffle=True,
+                    flip=False,
+                    zoom=0.0,
                     rotation=0):
         'Initialization'
         self.data_path = data_path
@@ -29,6 +31,8 @@ class DataGenerator(data_utils.Sequence):
         self.n_channels = n_channels
         self.num_classes = len(classes)
         self.shuffle = shuffle
+        self.flip = flip
+        self.zoom=zoom
         self.rotation = rotation if rotation<=360 else rotation % 360
         self.classes = classes
         self.label_encoder = self.__set_label_encoder(self.classes)
@@ -83,6 +87,15 @@ class DataGenerator(data_utils.Sequence):
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
     
+    def get_groung_truth_test(self):
+        #Only use this function with test data or withou suffle 'cause on every epochs it will change
+        rest = len(self.indexes) % self.batch_size
+        gt_Y = [self.Y_labels[k] for k in self.indexes]
+        if rest > 0:
+            return to_categorical(gt_Y[:-rest], self.num_classes)
+        else:
+            return to_categorical(gt_Y, self.num_classes)
+    
     def __crop_img(self, img):
         x0 = 0
         for slice in img:
@@ -128,6 +141,21 @@ class DataGenerator(data_utils.Sequence):
 
         return img[x0:-(1+x1),y0:-(1+y1),z0:-(1+z1)]
     
+    def make_zoom(self, img):
+        zoom = round(random.uniform(1.05, self.zoom), 2)
+        if zoom > 1.0:
+            original_shape = img.shape
+            img = ndimage.zoom(img, zoom)
+            zoomed_shape = img.shape
+            crop_values = (zoomed_shape[0]-original_shape[0],
+                            zoomed_shape[1]-original_shape[1],
+                            zoomed_shape[2]-original_shape[2])
+
+            img = img[ int(crop_values[0]/2):-int(crop_values[0]/2),
+                    int(crop_values[1]/2):-int(crop_values[1]/2),
+                    int(crop_values[2]/2):-int(crop_values[2]/2) ]
+        return img
+    
     def __load_data(self, img_path):
         # load nibabel Method
         img = nib.load(img_path).get_fdata()
@@ -136,9 +164,15 @@ class DataGenerator(data_utils.Sequence):
         
         axes_list = [(0,1),(1,2),(0,2)]
         axes = random.choice(axes_list)
+        if self.flip:
+            img = np.flip(img, axes)
+        axes = random.choice(axes_list)
         if self.rotation > 0:
-          angle = random.randint(-self.rotation, self.rotation)
-          img = ndimage.rotate(img, angle, axes=axes, reshape=True)
+            angle = random.randint(-self.rotation, self.rotation)
+            img = ndimage.rotate(img, angle, axes=axes, reshape=True)
+        if self.zoom > 1.0:
+            img = self.make_zoom(img)
+        
         
         img = self.__crop_img(img)
 
