@@ -163,18 +163,16 @@ class DataGenerator(data_utils.Sequence):
         img = self.__crop_img(img)
         
         axes_list = [(0,1),(1,2),(0,2)]
-        axes = random.choice(axes_list)
         if self.flip:
+            axes = random.choice(axes_list)
             img = np.flip(img, axes)
-        axes = random.choice(axes_list)
         if self.rotation > 0:
+            axes = random.choice(axes_list)
             angle = random.randint(-self.rotation, self.rotation)
             img = ndimage.rotate(img, angle, axes=axes, reshape=True)
+            img = self.__crop_img(img)
         if self.zoom > 1.0:
-            img = self.make_zoom(img)
-        
-        
-        img = self.__crop_img(img)
+            img = self.make_zoom(img)       
 
         # # One more dimension for the channels
         img = np.expand_dims(img, axis=3)
