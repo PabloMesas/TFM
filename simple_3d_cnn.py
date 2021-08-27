@@ -29,22 +29,25 @@ def SimpleVoxCNN(
     x = layers.Conv3D(64, (2, 2, 2), activation='relu', padding='same', name='block1_conv4')(x)
     x = layers.MaxPooling3D((2, 2, 2), name='block1_pool')(x)
     x = layers.BatchNormalization()(x)
+    x = layers.GaussianDropout(0.5)(x)
 
     # Block 2
     x = layers.Conv3D(128, (2, 2, 2), activation='relu', padding='same', name='block2_conv1')(x)
     x = layers.MaxPooling3D((2, 2, 2), name='block2_pool')(x)
     x = layers.BatchNormalization()(x)
+    x = layers.GaussianDropout(0.5)(x)
 
     # Block 3
     x = layers.Conv3D(256, (2, 2, 2), activation='relu', padding='same', name='block3_conv1')(x)
     x = layers.MaxPooling3D((2, 2, 2), name='block3_pool')(x)
     x = layers.BatchNormalization()(x)
+    x = layers.GaussianDropout(0.5)(x)
 
     # Classification block
     x = layers.GlobalAveragePooling3D()(x)
     x = layers.Dense(512, name='fc1', kernel_regularizer=regularizers.l1(0.001))(x)
     x = layers.LeakyReLU(alpha=0.01)(x)
-    x = layers.GaussianDropout(0.3)(x)
+    x = layers.GaussianDropout(0.5)(x)
 
     x = layers.Dense(n_classes, activation=classifier_activation,
                         name='predictions')(x)

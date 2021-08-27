@@ -45,10 +45,10 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 2
+batch_size = 4
 epochs = 80
-shape=128
-classes = ["CN", "AD", "MCI"]
+shape=110
+classes = ["MCI", "CN"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape,shape,int(shape), n_channels)
@@ -56,8 +56,8 @@ images_shape = (shape,shape,int(shape), n_channels)
 # **MODEL**
 # model = VoxCNN(input_shape=images_shape, n_classes=num_classes)
 # model = SimpleVoxCNN(input_shape=images_shape, n_classes=num_classes)
-# model = VoxResNet(input_shape=images_shape, n_classes=num_classes)
-model = AllCNN(input_shape=images_shape, n_classes=num_classes)
+model = VoxResNet(input_shape=images_shape, n_classes=num_classes)
+# model = AllCNN(input_shape=images_shape, n_classes=num_classes)
 
 model.summary()
 
@@ -88,95 +88,95 @@ test_generator = DataGenerator(data_path=project_dir + '/Test/',
 
 name_prefix = model.name + '_' + '-'.join(classes) + '_' + str(shape)
 name_code = name_prefix + '_' + x.strftime("%d-%m-%Y_%H-%M")
-name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + x.strftime("%d-%m-%Y_%H-%M")
+name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M")
 
 # graph_model = model_to_dot(model, show_shapes=True, show_layer_names=False,rankdir='LR')
 # graph_model.write_svg(project_dir + name_prefix + '_model.svg')
 
-# # # Create a callback that saves the model's weights
-# checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
-# callbacks_list = [
-#             ReduceLROnPlateau(monitor='val_accuracy',
-#                               factor=0.1,
-#                               patience=10,
-#                               min_lr=0.000001,
-#                               verbose=1),
-#             ModelCheckpoint(filepath=checkpoint_path,
-#                             monitor='val_accuracy',
-#                             mode='max',
-#                             # monitor='val_loss',
-#                             # mode='min',
-#                             verbose=1,
-#                             save_best_only=True,
-#                             save_weights_only = True),
-#             ModelCheckpoint(filepath=checkpoint_path,
-#                             monitor='val_accuracy',
-#                             mode='auto',
-#                             verbose=1,
-#                             period=10,
-#                             save_weights_only = True),
-#             CSVLogger( project_dir +name_code+'.log',
-#                       separator=',',
-#                       append=False)
-#     ]
+# # Create a callback that saves the model's weights
+checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
+callbacks_list = [
+            ReduceLROnPlateau(monitor='val_accuracy',
+                              factor=0.1,
+                              patience=5,
+                              min_lr=0.000001,
+                              verbose=1),
+            ModelCheckpoint(filepath=checkpoint_path,
+                            monitor='val_accuracy',
+                            mode='max',
+                            # monitor='val_loss',
+                            # mode='min',
+                            verbose=1,
+                            save_best_only=True,
+                            save_weights_only = True),
+            ModelCheckpoint(filepath=checkpoint_path,
+                            monitor='val_accuracy',
+                            mode='auto',
+                            verbose=1,
+                            period=10,
+                            save_weights_only = True),
+            CSVLogger( project_dir +name_code+'.log',
+                      separator=',',
+                      append=False)
+    ]
 
-# opt = Adam(0.0001)
+opt = Adam(0.0001)
 
-# # Compile the model
-# model.compile(loss='categorical_crossentropy',
-#               optimizer=opt,
-#               metrics=['accuracy'])
+# Compile the model
+model.compile(loss='categorical_crossentropy',
+              optimizer=opt,
+              metrics=['accuracy'])
 
-# # Fit data to model
-# history = model.fit(x=training_generator,
-#                     epochs=epochs,
-#                     verbose=1,
-#                     callbacks=callbacks_list,
-#                     use_multiprocessing=True,
-#                     workers=12,
-#                     validation_data=valid_generator)
+# Fit data to model
+history = model.fit(x=training_generator,
+                    epochs=epochs,
+                    verbose=1,
+                    callbacks=callbacks_list,
+                    use_multiprocessing=True,
+                    workers=12,
+                    validation_data=valid_generator)
 
-# # Test
-# # model.load_weights(project_dir + 'model_frozen_VoxResNet_ADMCI110_24-08-2021_00-57.03-0.748118.m5')
-# predictions = model.evaluate(test_generator,
-#                             use_multiprocessing=True,
-#                             workers=12)
-# print('Model Loss: %.4f' % (predictions[0]))
-# print('Model Accuracy: %.4f' % (predictions[1]))
+# Test
+# model.load_weights(project_dir + 'model_frozen_VoxResNet_ADMCI110_24-08-2021_00-57.03-0.748118.m5')
+predictions = model.evaluate(test_generator,
+                            use_multiprocessing=True,
+                            workers=12)
+print('Model Loss: %.4f' % (predictions[0]))
+print('Model Accuracy: %.4f' % (predictions[1]))
 
-# if num_classes == 2:
-#     testy = test_generator.get_groung_truth_test()
+if num_classes == 2:
+    testy = test_generator.get_groung_truth_test()
 
-#     # generate a no skill prediction (majority class)
-#     ns_probs = [0 for _ in range(len(testy))]
-#     # predict probabilities
-#     lr_probs = model.predict(test_generator,
-#                             use_multiprocessing=True,
-#                             workers=12)
-#     # keep probabilities for the positive outcome only
-#     lr_probs = lr_probs[:, 1]
-#     testy = testy[:, 1]
+    # generate a no skill prediction (majority class)
+    ns_probs = [0 for _ in range(len(testy))]
+    # predict probabilities
+    lr_probs = model.predict(test_generator,
+                            use_multiprocessing=True,
+                            workers=12)
+    # keep probabilities for the positive outcome only
+    lr_probs = lr_probs[:, 1]
+    testy = testy[:, 1]
 
-#     # calculate scores
-#     ns_auc = roc_auc_score(testy, ns_probs)
-#     lr_auc = roc_auc_score(testy, lr_probs)
+    # calculate scores
+    ns_auc = roc_auc_score(testy, ns_probs)
+    lr_auc = roc_auc_score(testy, lr_probs)
 
-#     # summarize scores
-#     print('No Skill: ROC AUC=%.3f' % (ns_auc))
-#     print('Logistic: ROC AUC=%.3f' % (lr_auc))
+    # summarize scores
+    print('No Skill: ROC AUC=%.3f' % (ns_auc))
+    print('Logistic: ROC AUC=%.3f' % (lr_auc))
 
-#     # calculate roc curves
-#     ns_fpr, ns_tpr, _ = roc_curve(testy, ns_probs)
-#     lr_fpr, lr_tpr, _ = roc_curve(testy, lr_probs)
+    # calculate roc curves
+    ns_fpr, ns_tpr, _ = roc_curve(testy, ns_probs)
+    lr_fpr, lr_tpr, _ = roc_curve(testy, lr_probs)
 
-#     # plot the roc curve for the model
-#     plt.plot(ns_fpr, ns_tpr, linestyle='--', label='No Skill')
-#     plt.plot(lr_fpr, lr_tpr, marker='.', label=name_prefix)
-#     # axis labels
-#     plt.xlabel('False Positive Rate (1 - Specifity)')
-#     plt.ylabel('True Positive Rate (Sensitivity)')
-#     # show the legend
-#     plt.legend()
-#     # show the plot
-#     plt.savefig(project_dir + name_prefix + '.png')
-#     # plt.show()
+    # plot the roc curve for the model
+    plt.plot(ns_fpr, ns_tpr, linestyle='--', label='No Skill')
+    plt.plot(lr_fpr, lr_tpr, marker='.', label=name_prefix)
+    # axis labels
+    plt.xlabel('False Positive Rate (1 - Specifity)')
+    plt.ylabel('True Positive Rate (Sensitivity)')
+    # show the legend
+    plt.legend()
+    # show the plot
+    plt.savefig(project_dir + name_prefix + '.png')
+    # plt.show()

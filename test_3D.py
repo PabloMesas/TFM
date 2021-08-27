@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='1' 
+os.environ['CUDA_VISIBLE_DEVICES']='0' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -16,6 +16,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Early
 # from tensorflow.keras.models import Model
 from vox_cnn import VoxCNN
 from voxresnet import VoxResNet
+from simple_3d_cnn import SimpleVoxCNN
+from all_cnn import AllCNN
 from tensorflow.keras import backend as K
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
@@ -39,10 +41,10 @@ physical_devices = tf.config.list_physical_devices('GPU')
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
 
-batch_size = 1
+batch_size = 2
 epochs = 150
-shape=110
-classes = ["MCI", "CN"]
+shape=128
+classes = ["AD", "MCI"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape,shape,int(shape), n_channels)
@@ -51,8 +53,10 @@ import datetime
 x = datetime.datetime.today()
 
 # **MODEL**
-model = VoxCNN(input_shape=images_shape, n_classes=num_classes)
+# model = VoxCNN(input_shape=images_shape, n_classes=num_classes)
+model = SimpleVoxCNN(input_shape=images_shape, n_classes=num_classes)
 # model = VoxResNet(input_shape=images_shape, n_classes=num_classes)
+# model = AllCNN(input_shape=images_shape, n_classes=num_classes)
 
 model.summary()
 
@@ -78,7 +82,7 @@ model.compile(loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Test
-model.load_weights(project_dir + 'VoxCNN_E40_CN-MCI_25-08-2021_20-20.0.7619.m5')
+model.load_weights(project_dir + 'SimpleVoxCNN_E64_CN-AD_26-08-2021_10-06.0.8778.m5')
 predictions = model.evaluate(test_generator,
                             use_multiprocessing=True,
                             workers=12)

@@ -31,13 +31,12 @@ def ResNet(stack_fn,
 
     bn_axis = 4 if backend.image_data_format() == 'channels_last' else 1 #3D images
 
-    # x = layers.ZeroPadding3D(padding=3, name='conv1a_pad')(img_input)
 
-    x = layers.Conv3D(32, 3, use_bias=use_bias, name='conv1a_conv')(img_input)
+    x = layers.Conv3D(32, 3, padding='same', use_bias=use_bias, name='conv1a_conv')(img_input)
     x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name='conv1a_bn')(x)
     x = layers.Activation('relu', name='conv1a_relu')(x)
 
-    x = layers.Conv3D(32, 3, use_bias=use_bias, name='conv1b_conv')(x)
+    x = layers.Conv3D(32, 3, padding='same', use_bias=use_bias, name='conv1b_conv')(x)
 
     x = stack_fn(x)
 
@@ -77,11 +76,11 @@ def block(x, filters, kernel_size=3, name=None):
     x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name=name + '_1_bn')(x)
     x = layers.Activation('relu', name=name + '_1_relu')(x)
 
-    x = layers.Conv3D(filters, kernel_size, padding='SAME', name=name + '_1_conv')(x)
+    x = layers.Conv3D(filters, kernel_size, padding='same', name=name + '_1_conv')(x)
     x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name=name + '_2_bn')(x)
     x = layers.Activation('relu', name=name + '_2_relu')(x)
 
-    x = layers.Conv3D(filters, kernel_size, padding='SAME', name=name + '_2_conv')(x)
+    x = layers.Conv3D(filters, kernel_size, padding='same', name=name + '_2_conv')(x)
 
 
     x = layers.Add(name=name + '_add')([shortcut, x])
@@ -105,7 +104,7 @@ def stack(x, filters, blocks, name=None):
 
     x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name=name + '_0_bn')(x)
     x = layers.Activation('relu', name=name + '_1_relu')(x)
-    x = layers.Conv3D(filters, 3, strides=2, name=name + '_0_conv')(x)
+    x = layers.Conv3D(filters, 3, padding='same', strides=2, name=name + '_0_conv')(x)
 
     x = block(x, filters, name=name + '_block1')
     for i in range(2, blocks + 1):
