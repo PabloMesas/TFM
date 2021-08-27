@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='1' 
+os.environ['CUDA_VISIBLE_DEVICES']='0' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -18,6 +18,8 @@ from vox_cnn import VoxCNN
 from voxresnet import VoxResNet
 from simple_3d_cnn import SimpleVoxCNN
 from all_cnn import AllCNN
+from vox_inception import VoxInceptionCNN
+from vox_cnn_v2 import VoxCNN_V2
 from tensorflow.keras import backend as K
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
@@ -45,19 +47,21 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 4
+batch_size = 8
 epochs = 80
 shape=110
-classes = ["MCI", "CN"]
+classes = ["AD", "CN"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape,shape,int(shape), n_channels)
 
 # **MODEL**
-# model = VoxCNN(input_shape=images_shape, n_classes=num_classes)
+# model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
+model = VoxCNN_V2(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = SimpleVoxCNN(input_shape=images_shape, n_classes=num_classes)
-model = VoxResNet(input_shape=images_shape, n_classes=num_classes)
-# model = AllCNN(input_shape=images_shape, n_classes=num_classes)
+# model = VoxResNet(input_shape=images_shape, n_classes=num_classes) # batch=4
+# model = AllCNN(input_shape=images_shape, n_classes=num_classes) # batch=16
+# model = VoxInceptionCNN(input_shape=images_shape, n_classes=num_classes)
 
 model.summary()
 
@@ -120,7 +124,7 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.0001)
+opt = Adam(0.000027)
 
 # Compile the model
 model.compile(loss='categorical_crossentropy',
