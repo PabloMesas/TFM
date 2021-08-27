@@ -24,12 +24,12 @@ def VoxInceptionCNN(
     x = layers.BatchNormalization()(x)
 
     x = inception_module(x,
-                        k=8,
+                        k=16,
                         name='inception_1a')
 
-    x = inception_module(x,
-                        k=16,
-                        name='inception_1b')
+    # x = inception_module(x,
+    #                     k=16,
+    #                     name='inception_1b')
     
     x = layers.MaxPool3D((3, 3, 3), padding='same', strides=2, name='max_pool_3')(x)
 
@@ -37,19 +37,19 @@ def VoxInceptionCNN(
                         k=32,
                         name='inception_2a')
 
-    x = inception_module(x,
-                        k=64,
-                        name='inception_2b')
+    # x = inception_module(x,
+    #                     k=64,
+    #                     name='inception_2b')
     
     x = layers.MaxPool3D((3, 3, 3), padding='same', strides=2, name='max_pool_4')(x)
 
     x = inception_module(x,
-                        k=128,
+                        k=64,
                         name='inception_3a')
 
-    x = inception_module(x,
-                        k=256,
-                        name='inception_3b')
+    # x = inception_module(x,
+    #                     k=256,
+    #                     name='inception_3b')
     
     x = layers.MaxPool3D((3, 3, 3), padding='same', strides=2, name='max_pool_5')(x)
 
@@ -67,15 +67,15 @@ def VoxInceptionCNN(
 def inception_module(x,
                     k,
                     name=None):
-    path1 = layers.Conv3D(int(k/2), (1, 1, 1), padding='same', activation='relu')(x)
+    path1 = layers.Conv3D(int(k), (1, 1, 1), padding='same', activation='relu')(x)
 
     path2 = layers.Conv3D(int(k*3/4), (1, 1, 1), padding='same', activation='relu')(x)
     path2 = layers.Conv3D(k, (3, 3, 3), padding='same', activation='relu')(path2)
 
     path3 = layers.Conv3D(int(k/4), (1, 1, 1), padding='same', activation='relu')(x)
-    path3 = layers.Conv3D(int(k/2), (5, 5, 5), padding='same', activation='relu')(path3)
+    path3 = layers.Conv3D(int(k), (5, 5, 5), padding='same', activation='relu')(path3)
 
-    path4 = layers.MaxPool3D((3, 3), strides=(1, 1), padding='same')(x)
-    path4 = layers.Conv3D(int(k/4), (1, 1, 1), padding='same', activation='relu')(path4)
+    path4 = layers.MaxPool3D((3, 3, 3), strides=(1, 1, 1), padding='same')(x)
+    path4 = layers.Conv3D(int(k), (1, 1, 1), padding='same', activation='relu')(path4)
     
     return layers.concatenate([path1, path2, path3, path4], axis=3, name=name)

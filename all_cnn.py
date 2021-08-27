@@ -48,11 +48,10 @@ def AllCNN(
     # Classification block
     x = layers.Flatten(name='flatten')(x)
     x = layers.Dense(1600, activation='relu', name='fc1')(x)
-    # x = layers.BatchNormalization()(x)
-    # x = layers.Dropout(0.7)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.7)(x)
 
-    x = layers.Dense(n_classes, activation=classifier_activation,
-                        name='predictions')(x)
+    x = layers.Dense(n_classes, activation=classifier_activation, name='predictions')(x)
 
     # Create model.
     model = Model(img_input, x, name='AllCNN')
