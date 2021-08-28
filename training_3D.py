@@ -50,18 +50,18 @@ x = datetime.datetime.today()
 batch_size = 8
 epochs = 80
 shape=110
-classes = ["AD", "CN"]
+classes = ["MCI", "CN"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape,shape,int(shape), n_channels)
 
 # **MODEL**
-# model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
-model = VoxCNN_V2(input_shape=images_shape, n_classes=num_classes) # batch=8
+model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
+# model = VoxCNN_V2(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = SimpleVoxCNN(input_shape=images_shape, n_classes=num_classes)
 # model = VoxResNet(input_shape=images_shape, n_classes=num_classes) # batch=4
-# model = AllCNN(input_shape=images_shape, n_classes=num_classes) # batch=16
-# model = VoxInceptionCNN(input_shape=images_shape, n_classes=num_classes)
+# model = AllCNN(input_shape=images_shape, n_classes=num_classes)
+# model = VoxInceptionCNN(input_shape=images_shape, n_classes=num_classes) # batch=16
 
 model.summary()
 
@@ -100,11 +100,11 @@ name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape
 # # Create a callback that saves the model's weights
 checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
 callbacks_list = [
-            ReduceLROnPlateau(monitor='val_accuracy',
-                              factor=0.1,
-                              patience=5,
-                              min_lr=0.000001,
-                              verbose=1),
+            # ReduceLROnPlateau(monitor='val_accuracy',
+            #                   factor=0.1,
+            #                   patience=5,
+            #                   min_lr=0.000001,
+            #                   verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
                             monitor='val_accuracy',
                             mode='max',
@@ -124,16 +124,21 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.000027)
+opt = Adam(0.000027, decay=1e-6)
 
 # Compile the model
+
+# model.load_weights(project_dir + 'VoxCNN_V2_E52_AD-CN_110_28-08-2021_11-19.0.8214.m5')
+model.load_weights(project_dir + 'VoxCNN_E18_AD-CN_110_28-08-2021_00-45.0.7841.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
+# K.set_value(model.optimizer.learning_rate, 0.000001)
 
 # Fit data to model
 history = model.fit(x=training_generator,
                     epochs=epochs,
+                    # initial_epoch=20,
                     verbose=1,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,
