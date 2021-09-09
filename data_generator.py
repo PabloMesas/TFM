@@ -20,6 +20,7 @@ class DataGenerator(data_utils.Sequence):
                     batch_size = 1,
                     n_channels = 1,
                     classes = ["AD", "CN", "MCI"],
+                    fourth_axis = True,
                     shuffle=True,
                     flip=False,
                     zoom=0.0,
@@ -30,6 +31,7 @@ class DataGenerator(data_utils.Sequence):
         self.batch_size = batch_size
         self.n_channels = n_channels
         self.num_classes = len(classes)
+        self.fourth_axis = fourth_axis
         self.shuffle = shuffle
         self.flip = flip
         self.zoom=zoom
@@ -162,6 +164,8 @@ class DataGenerator(data_utils.Sequence):
 
         img = self.__crop_img(img)
         
+        img = ndimage.rotate(img, 90, axes=(0,2), reshape=True)
+
         axes_list = [(0,1),(1,2),(0,2)]
         if self.flip:
             axes = random.choice(axes_list)
@@ -174,8 +178,9 @@ class DataGenerator(data_utils.Sequence):
         if self.zoom > 1.0:
             img = self.make_zoom(img)       
 
-        # # One more dimension for the channels
-        img = np.expand_dims(img, axis=3)
+        if self.fourth_axis:
+            # # One more dimension for the channels
+            img = np.expand_dims(img, axis=3)
 
         #NORMALIZATION
         # img = img/np.max(img) #We normalize between 0 an 1
@@ -186,7 +191,10 @@ class DataGenerator(data_utils.Sequence):
     def __data_generation(self, Batch_ids, Batch_Y):
         'Generates data containing batch_size samples'
         # Initialization
-        X = np.zeros((self.batch_size, *self.dim, self.n_channels))
+        if self.fourth_axis:
+            X = np.zeros((self.batch_size, *self.dim, self.n_channels))
+        else:
+            X = np.zeros((self.batch_size, *self.dim))
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = []
@@ -198,7 +206,10 @@ class DataGenerator(data_utils.Sequence):
 
                 img = self.__load_data(img_path=img_path)
 
-                X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
+                if self.fourth_axis:
+                    X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
+                else:
+                    X[c,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
             
 
         return X

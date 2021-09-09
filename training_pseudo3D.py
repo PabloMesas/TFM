@@ -14,12 +14,9 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, CSVLogger
 # from tensorflow.keras.models import Model
-from vox_cnn import VoxCNN
-from voxresnet import VoxResNet
-from simple_3d_cnn import SimpleVoxCNN
-from all_cnn import AllCNN
-from vox_inception import VoxInceptionCNN
-from vox_cnn_v2 import VoxCNN_V2
+from vgg16_pseudo3D import brainVGG16_pseudo3D
+from vox_cnn_pseudo3D import voxCNN_pseudo3D
+from vox_cnn_pseudo3D_v2 import voxCNN_pseudo3D_V2
 from tensorflow.keras import backend as K
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
@@ -47,21 +44,18 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 16
+batch_size = 32
 epochs = 80
-shape=110
+shape=128
 classes = ["AD", "CN"]
 num_classes = len(classes) 
 n_channels = 1
-images_shape = (shape,shape,int(shape), n_channels)
+images_shape = (shape,shape,shape)
 
 # **MODEL**
-model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
-# model = VoxCNN_V2(input_shape=images_shape, n_classes=num_classes) # batch=8
-# model = SimpleVoxCNN(input_shape=images_shape, n_classes=num_classes)
-# model = VoxResNet(input_shape=images_shape, n_classes=num_classes) # batch=4
-# model = AllCNN(input_shape=images_shape, n_classes=num_classes)
-# model = VoxInceptionCNN(input_shape=images_shape, n_classes=num_classes) # batch=16
+# model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
+# model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
+model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
 
 model.summary()
 
@@ -69,25 +63,25 @@ project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA/"
 from data_generator import DataGenerator
 
 training_generator = DataGenerator(data_path=project_dir + '/Train/',
-                                   dim=images_shape[:-1],
+                                   dim=images_shape,
                                    batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
-                                #    flip=True,
-                                #    zoom=1.5,
-                                #    rotation=10,
+                                   fourth_axis = False,
                                    shuffle=True)
 valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
-                                   dim=images_shape[:-1],
+                                   dim=images_shape,
                                    batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
+                                   fourth_axis = False,
                                    shuffle=True)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
-                                   dim=images_shape[:-1],
+                                   dim=images_shape,
                                    batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
+                                   fourth_axis = False,
                                    shuffle=True)
 
 name_prefix = model.name + '_' + '-'.join(classes) + '_' + str(shape)
@@ -124,7 +118,7 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.000027, decay=1e-6)
+opt = Adam(0.00001, decay=1e-6)
 
 # Compile the model
 

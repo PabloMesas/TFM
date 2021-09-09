@@ -115,8 +115,8 @@ callbacks_list = [
 
 # **MODEL**
 
-# model = brainVGG16(input_shape=images_shape, frozen=True, pretrained=True, n_classes=num_classes)
-model = brainVGG19(input_shape=images_shape, frozen=True, pretrained=True, n_classes=num_classes)
+model = brainVGG16(input_shape=images_shape, frozen=True, pretrained=True, n_classes=num_classes)
+# model = brainVGG19(input_shape=images_shape, frozen=True, pretrained=True, n_classes=num_classes)
 
 model.summary()
 

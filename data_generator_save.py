@@ -108,17 +108,16 @@ class DataAugmentation():
 
         img_original = self.__crop_img(img_original)
         
-        angles = [-10, 10]
-        axes_list = [(0,1),(1,2),(0,2)]
+        angles = [-10, -5, 5, 10]
         i = 0
         for angle in angles:
             img = np.copy(img_original)
             if self.flip:
                 do_flip = random.randint(0, 10)
                 if do_flip >=5:
-                    axes = random.choice(axes_list)
-                    img = np.flip(img, axes)
+                    img = np.flip(img, 2)
 
+            axes_list = [(0,1),(1,2),(0,2)]
             axes = random.choice(axes_list)
             img = ndimage.rotate(img, angle, axes=axes, reshape=True)
 
@@ -153,5 +152,5 @@ generador2 = DataAugmentation(data_path=project_dir + '/Validation/',
                             flip=True,
                             zoom=1.5)
 
-# generador.data_generation()
+generador.data_generation()
 generador2.data_generation()
