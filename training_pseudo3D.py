@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='0' 
+os.environ['CUDA_VISIBLE_DEVICES']='1' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -45,7 +45,7 @@ import datetime
 x = datetime.datetime.today()
 
 batch_size = 32
-epochs = 80
+epochs = 120
 shape=128
 classes = ["AD", "CN"]
 num_classes = len(classes) 
@@ -54,8 +54,8 @@ images_shape = (shape,shape,shape)
 
 # **MODEL**
 # model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
-# model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
-model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
+model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
+# model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
 
 model.summary()
 
@@ -118,16 +118,16 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.00001, decay=1e-6)
+opt = Adam(0.000027, decay=1e-6)
 
 # Compile the model
 
-# model.load_weights(project_dir + 'VoxCNN_V2_E52_AD-CN_110_28-08-2021_11-19.0.8214.m5')
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E73_AD-CN_128_09-09-2021_12-08.0.7891.m5')
 # model.load_weights(project_dir + 'VoxCNN_E18_AD-CN_110_28-08-2021_00-45.0.7841.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-# K.set_value(model.optimizer.learning_rate, 0.000001)
+# K.set_value(model.optimizer.learning_rate, 0.000027)
 
 # Fit data to model
 history = model.fit(x=training_generator,
