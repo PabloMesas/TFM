@@ -31,10 +31,11 @@ def denseNet121_pseudo3D(
     model1.summary()
     conv = model1.get_layer('relu')
     # Classification block
-    x = layers.Flatten(name='flatten')(conv.output)
+    # x = layers.Flatten(name='flatten')(conv.output)
+    x = layers.GlobalAveragePooling2D(name='avg_pool')(conv.output)
     # x = layers.Dense(128, activation='relu', name='fc1')(x)
     # x = layers.BatchNormalization()(x)
-    # x = layers.Dropout(0.7)(x)
+    x = layers.Dropout(0.3)(x)
     # x = layers.Dense(64, activation='relu', name='fc2')(x)
     predictions = layers.Dense(n_classes, activation=classifier_activation, name='predictions')(x)
 
