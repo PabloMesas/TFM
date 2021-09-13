@@ -17,6 +17,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Early
 from vgg16_pseudo3D import brainVGG16_pseudo3D
 from vox_cnn_pseudo3D import voxCNN_pseudo3D
 from vox_cnn_pseudo3D_v2 import voxCNN_pseudo3D_V2
+from densenet_pseudo3D import denseNet121_pseudo3D
 from tensorflow.keras import backend as K
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
@@ -44,7 +45,7 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 32
+batch_size = 40
 epochs = 120
 shape=128
 classes = ["AD", "CN"]
@@ -54,7 +55,8 @@ images_shape = (shape,shape,shape)
 
 # **MODEL**
 # model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
-model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
+model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32 lr=0.000001
+# model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
 # model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
 
 model.summary()
@@ -94,11 +96,11 @@ name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape
 # # Create a callback that saves the model's weights
 checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
 callbacks_list = [
-            # ReduceLROnPlateau(monitor='val_accuracy',
-            #                   factor=0.1,
-            #                   patience=5,
-            #                   min_lr=0.000001,
-            #                   verbose=1),
+            ReduceLROnPlateau(monitor='val_accuracy',
+                              factor=0.5,
+                              patience=10,
+                              min_lr=0.000001,
+                              verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
                             monitor='val_accuracy',
                             mode='max',
@@ -118,7 +120,7 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.000027, decay=1e-6)
+opt = Adam(0.000001, decay=1e-6)
 
 # Compile the model
 
