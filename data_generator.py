@@ -12,6 +12,8 @@ import nibabel as nib
 from tensorflow.python.keras.utils import data_utils
 from tensorflow.keras.utils import to_categorical
 
+from Distort import Distort, GaussianDistortion
+
 class DataGenerator(data_utils.Sequence):
     'Generates data for Keras'
     def __init__(self,
@@ -21,6 +23,7 @@ class DataGenerator(data_utils.Sequence):
                     n_channels = 1,
                     classes = ["AD", "CN", "MCI"],
                     fourth_axis = True,
+                    test=False,
                     shuffle=True,
                     flip=False,
                     zoom=0.0,
@@ -32,6 +35,7 @@ class DataGenerator(data_utils.Sequence):
         self.n_channels = n_channels
         self.num_classes = len(classes)
         self.fourth_axis = fourth_axis
+        self.test = test
         self.shuffle = shuffle
         self.flip = flip
         self.zoom=zoom
@@ -52,8 +56,12 @@ class DataGenerator(data_utils.Sequence):
                 x_index.append(f[1])
                 y_labels.append(f[0])
 
-        y_labels = self.label_encoder.transform(y_labels)
+        if not self.test:
+            x_index = x_index*8
+            y_labels = y_labels*8
         
+        y_labels = self.label_encoder.transform(y_labels)
+
         print(str(len(x_index)) + ' image(s) found in ' + data_path)
 
         return x_index, y_labels
@@ -186,6 +194,13 @@ class DataGenerator(data_utils.Sequence):
         # img = img/np.max(img) #We normalize between 0 an 1
         img = (img - np.mean(img)) / np.std(img) #whitening
 
+        # # deformador = Distort(10, 10, 500)
+        # deformador_gaussiano = GaussianDistortion(6, 6, 2, "bell", "in", 1.0, 1.0, 1.0, 1.0)
+        # # augmented_img = deformador.perform_operation(image)
+
+        # img = deformador_gaussiano.perform_operation(img)
+
+
         return img
 
     def __data_generation(self, Batch_ids, Batch_Y):
@@ -206,10 +221,19 @@ class DataGenerator(data_utils.Sequence):
 
                 img = self.__load_data(img_path=img_path)
 
+
+
                 if self.fourth_axis:
                     X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
                 else:
-                    X[c,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
+                    img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
+                    if not self.test:
+                        deformador_gaussiano = GaussianDistortion(4, 4, 10, "bell", "in", 1.0, 1.0, 1.0, 1.0)
+                        img = deformador_gaussiano.perform_operation(img)
+                        # print('train mode')
+                    X[c,:,:,:] = img
+                
+                
             
 
         return X

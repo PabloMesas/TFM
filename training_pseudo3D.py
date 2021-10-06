@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='1' 
+os.environ['CUDA_VISIBLE_DEVICES']='0' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -17,7 +17,9 @@ from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, Early
 from vgg16_pseudo3D import brainVGG16_pseudo3D
 from vox_cnn_pseudo3D import voxCNN_pseudo3D
 from vox_cnn_pseudo3D_v2 import voxCNN_pseudo3D_V2
+from vox_cnn_pseudo3D_v3 import voxCNN_pseudo3D_V3
 from densenet_pseudo3D import denseNet121_pseudo3D
+from denseNet_pseudoRGB import DenseNet_pseudoRGB
 from tensorflow.keras import backend as K
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
@@ -45,7 +47,7 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 40
+batch_size = 80
 epochs = 120
 shape=128
 classes = ["AD", "CN"]
@@ -55,13 +57,15 @@ images_shape = (shape,shape,shape)
 
 # **MODEL**
 # model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
-model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32 lr=0.000001
-# model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
-# model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32
+model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=False, frozen=False,) # batch=32 lr=0.000001
+# model = DenseNet_pseudoRGB(input_shape=images_shape, classes=num_classes) # batch=32 lr=0.000001
+# model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
+# model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
+# model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
 
-model.summary()
+# model.summary()
 
-project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA/"
+project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA_nougmented/"
 from data_generator import DataGenerator
 
 training_generator = DataGenerator(data_path=project_dir + '/Train/',
@@ -73,20 +77,22 @@ training_generator = DataGenerator(data_path=project_dir + '/Train/',
                                    shuffle=True)
 valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
                                    dim=images_shape,
-                                   batch_size = batch_size,
+                                   batch_size = 1,
                                    n_channels = n_channels,
                                    classes = classes,
+                                   test=False,
                                    fourth_axis = False,
                                    shuffle=True)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape,
-                                   batch_size = batch_size,
+                                   batch_size = 1,
                                    n_channels = n_channels,
                                    classes = classes,
+                                   test=True,
                                    fourth_axis = False,
                                    shuffle=True)
 
-name_prefix = model.name + '_' + '-'.join(classes) + '_' + str(shape)
+name_prefix = model.name + '_3x3_' + '_' + '-'.join(classes) + '_' + str(shape)
 name_code = name_prefix + '_' + x.strftime("%d-%m-%Y_%H-%M")
 name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M")
 
@@ -96,11 +102,11 @@ name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape
 # # Create a callback that saves the model's weights
 checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
 callbacks_list = [
-            ReduceLROnPlateau(monitor='val_accuracy',
-                              factor=0.5,
-                              patience=10,
-                              min_lr=0.000001,
-                              verbose=1),
+            # ReduceLROnPlateau(monitor='val_accuracy',
+            #                   factor=0.5,
+            #                   patience=30,
+            #                   min_lr=0.000001,
+            #                   verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
                             monitor='val_accuracy',
                             mode='max',
@@ -120,21 +126,25 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.000001, decay=1e-6)
+opt = Adam(0.00001, beta_1=0.8, beta_2=0.8)
 
 # Compile the model
 
-# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E73_AD-CN_128_09-09-2021_12-08.0.7891.m5')
-# model.load_weights(project_dir + 'VoxCNN_E18_AD-CN_110_28-08-2021_00-45.0.7841.m5')
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E67_AD-CN_128_04-10-2021_11-25.0.7333.m5')
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E26_AD-CN_128_04-10-2021_11-25.0.7167.m5')
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E66_AD-CN_128_23-09-2021_01-19.0.7812.m5')
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E80_AD-CN_128_23-09-2021_21-00.0.7667.m5')
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E02_MCI-CN_128_30-09-2021_18-40.0.7174.m5')
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_E36_AD-CN_128_05-10-2021_18-17.0.7667.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-# K.set_value(model.optimizer.learning_rate, 0.000027)
+# K.set_value(model.optimizer.learning_rate, 0.00001)
 
-# Fit data to model
+# # Fit data to model
 history = model.fit(x=training_generator,
                     epochs=epochs,
-                    # initial_epoch=20,
+                    # initial_epoch=21,
                     verbose=1,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,

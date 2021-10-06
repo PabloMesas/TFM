@@ -4,8 +4,6 @@ from tensorflow.keras.applications.vgg16 import VGG16
 
 def voxCNN_pseudo3D_V2(
     input_shape=(128,128,128),
-    frozen=False,
-    pretrained=False,
     n_classes=3,
     classifier_activation='softmax'
 ):
@@ -18,6 +16,10 @@ def voxCNN_pseudo3D_V2(
     # Block 1 - PseudoRGB with 3  filters
     input_psudoRGB = layers.Conv2D(3, (3, 3), activation='relu', padding='same', name='block0_pseudoRGB')(img_input)
     #TODO: Cambiar tamaño del filtro 3x3 o 1x1
+
+    x = layers.experimental.preprocessing.RandomFlip("vertical")(x)
+    x = layers.experimental.preprocessing.RandomRotation(0.2, fill_mode='constant')(x) #nearest
+    x = layers.experimental.preprocessing.RandomZoom(height_factor=0.4, fill_mode='constant')(x)
 
    # Block 1
     x = layers.Conv2D(

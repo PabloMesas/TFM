@@ -5,10 +5,10 @@ Reference paper:
     (https://arxiv.org/abs/1608.06993) (CVPR 2017 Best Paper Award)
 """
 
-from tensorflow.python.keras import backend
-from tensorflow.python.keras import layers
-from tensorflow.python.keras.engine import training
-from tensorflow.python.util.tf_export import keras_export
+from tensorflow.keras import backend
+from tensorflow.keras import layers
+from tensorflow.keras.models import Model
+# from tensorflow.util.tf_export import keras_export
 
 
 def dense_block(x, blocks, name):
@@ -145,8 +145,13 @@ def DenseNet(
   """
   #Input
   img_input = layers.Input(shape=input_shape)
+  x = layers.experimental.preprocessing.RandomFlip("vertical")(img_input)
+  x = layers.experimental.preprocessing.RandomRotation(0.2, fill_mode='constant')(x) #nearest
+  x = layers.experimental.preprocessing.RandomTranslation(height_factor=0.1, width_factor=0.1, fill_mode='nearest')(x)
+  x = layers.experimental.preprocessing.RandomZoom(height_factor=0.2, fill_mode='constant')(x)
+
   # Block 1 - PseudoRGB with 3  filters
-  input_psudoRGB = layers.Conv2D(3, (3, 3), activation='relu', padding='same', name='block1_pseudoRGB')(img_input)
+  input_psudoRGB = layers.Conv2D(3, (3, 3), activation='relu', padding='same', name='block0_pseudoRGB')(x)
   #TODO: Cambiar tamaño del filtro 3x3 o 1x1
 
   bn_axis = 3 if backend.image_data_format() == 'channels_last' else 1
@@ -163,10 +168,10 @@ def DenseNet(
   x = dense_block(x, blocks[0], name='conv2')
   x = transition_block(x, 0.5, name='pool2')
   x = dense_block(x, blocks[1], name='conv3')
-  x = transition_block(x, 0.5, name='pool3')
-  x = dense_block(x, blocks[2], name='conv4')
-  x = transition_block(x, 0.5, name='pool4')
-  x = dense_block(x, blocks[3], name='conv5')
+  # x = transition_block(x, 0.5, name='pool3')
+  # x = dense_block(x, blocks[2], name='conv4')
+  # x = transition_block(x, 0.5, name='pool4')
+  # x = dense_block(x, blocks[3], name='conv5')
 
   x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name='bn')(x)
   x = layers.Activation('relu', name='relu')(x)
@@ -176,18 +181,20 @@ def DenseNet(
   elif pooling == 'max':
     x = layers.GlobalMaxPooling2D(name='max_pool')(x)
 
+  x = layers.Dropout(0.3)(x)
+
   x = layers.Dense(classes, activation=classifier_activation,
                      name='predictions')(x)
 
   # Create model.
-  model = training.Model(img_input, x, name='densenet_pseudoRGB')
+  model = Model(img_input, x, name='densenet_pseudoRGB')
 
   return model
 
 
 def DenseNet_pseudoRGB(input_shape=None,
-                pooling=None,
+                pooling='avg',
                 classes=2):
   """Instantiates the Densenet121 architecture."""
-  return DenseNet([2, 2, 4], input_shape, pooling, classes)
+  return DenseNet([4, 4], input_shape, pooling, classes)
 
