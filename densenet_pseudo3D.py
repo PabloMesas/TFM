@@ -17,7 +17,7 @@ def denseNet121_pseudo3D(
     img_input = layers.Input(shape=input_shape)
 
     x = layers.experimental.preprocessing.RandomFlip("vertical")(img_input)
-    x = layers.experimental.preprocessing.RandomContrast(0.9)(x)
+    # x = layers.experimental.preprocessing.RandomContrast(0.9)(x)
     x = layers.experimental.preprocessing.RandomRotation(0.2, fill_mode='constant')(x) #nearest
     x = layers.experimental.preprocessing.RandomTranslation(height_factor=0.1, width_factor=0.1, fill_mode='nearest')(x)
     x = layers.experimental.preprocessing.RandomZoom(height_factor=0.1, fill_mode='constant')(x)

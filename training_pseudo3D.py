@@ -47,7 +47,7 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 80
+batch_size = 64
 epochs = 120
 shape=128
 classes = ["AD", "CN"]
@@ -57,9 +57,9 @@ images_shape = (shape,shape,shape)
 
 # **MODEL**
 # model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
-model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=False, frozen=False,) # batch=32 lr=0.000001
+# model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=False, frozen=False,) # batch=32 lr=0.000001
 # model = DenseNet_pseudoRGB(input_shape=images_shape, classes=num_classes) # batch=32 lr=0.000001
-# model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
+model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
 # model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
 # model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
 
@@ -85,7 +85,7 @@ valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
                                    shuffle=True)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape,
-                                   batch_size = 1,
+                                   batch_size = 2,
                                    n_channels = n_channels,
                                    classes = classes,
                                    test=True,
@@ -126,7 +126,7 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.00001, beta_1=0.8, beta_2=0.8)
+opt = Adam(0.000001, beta_1=0.8, beta_2=0.8)
 
 # Compile the model
 
@@ -135,16 +135,16 @@ opt = Adam(0.00001, beta_1=0.8, beta_2=0.8)
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E66_AD-CN_128_23-09-2021_01-19.0.7812.m5')
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E80_AD-CN_128_23-09-2021_21-00.0.7667.m5')
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E02_MCI-CN_128_30-09-2021_18-40.0.7174.m5')
-# model.load_weights(project_dir + 'denseNet121_pseudoRGB_E36_AD-CN_128_05-10-2021_18-17.0.7667.m5')
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_E30_AD-CN_128_06-10-2021_21-01.0.7167.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
 # K.set_value(model.optimizer.learning_rate, 0.00001)
 
-# # Fit data to model
+# Fit data to model
 history = model.fit(x=training_generator,
                     epochs=epochs,
-                    # initial_epoch=21,
+                    # initial_epoch=30,
                     verbose=1,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,

@@ -37,9 +37,9 @@ class DataGenerator(data_utils.Sequence):
         self.fourth_axis = fourth_axis
         self.test = test
         self.shuffle = shuffle
-        self.flip = flip
-        self.zoom=zoom
-        self.rotation = rotation if rotation<=360 else rotation % 360
+        # self.flip = flip
+        # self.zoom=zoom
+        # self.rotation = rotation if rotation<=360 else rotation % 360
         self.classes = classes
         self.label_encoder = self.__set_label_encoder(self.classes)
         self.list_IDs, self.Y_labels = self.__get_index(data_path)
@@ -151,20 +151,20 @@ class DataGenerator(data_utils.Sequence):
 
         return img[x0:-(1+x1),y0:-(1+y1),z0:-(1+z1)]
     
-    def make_zoom(self, img):
-        zoom = round(random.uniform(1.05, self.zoom), 2)
-        if zoom > 1.0:
-            original_shape = img.shape
-            img = ndimage.zoom(img, zoom)
-            zoomed_shape = img.shape
-            crop_values = (zoomed_shape[0]-original_shape[0],
-                            zoomed_shape[1]-original_shape[1],
-                            zoomed_shape[2]-original_shape[2])
+    # def make_zoom(self, img):
+    #     zoom = round(random.uniform(1.05, self.zoom), 2)
+    #     if zoom > 1.0:
+    #         original_shape = img.shape
+    #         img = ndimage.zoom(img, zoom)
+    #         zoomed_shape = img.shape
+    #         crop_values = (zoomed_shape[0]-original_shape[0],
+    #                         zoomed_shape[1]-original_shape[1],
+    #                         zoomed_shape[2]-original_shape[2])
 
-            img = img[ int(crop_values[0]/2):-int(crop_values[0]/2),
-                    int(crop_values[1]/2):-int(crop_values[1]/2),
-                    int(crop_values[2]/2):-int(crop_values[2]/2) ]
-        return img
+    #         img = img[ int(crop_values[0]/2):-int(crop_values[0]/2),
+    #                 int(crop_values[1]/2):-int(crop_values[1]/2),
+    #                 int(crop_values[2]/2):-int(crop_values[2]/2) ]
+    #     return img
     
     def __load_data(self, img_path):
         # load nibabel Method
@@ -174,17 +174,17 @@ class DataGenerator(data_utils.Sequence):
         
         img = ndimage.rotate(img, 90, axes=(0,2), reshape=True)
 
-        axes_list = [(0,1),(1,2),(0,2)]
-        if self.flip:
-            axes = random.choice(axes_list)
-            img = np.flip(img, axes)
-        if self.rotation > 0:
-            axes = random.choice(axes_list)
-            angle = random.randint(-self.rotation, self.rotation)
-            img = ndimage.rotate(img, angle, axes=axes, reshape=True)
-            img = self.__crop_img(img)
-        if self.zoom > 1.0:
-            img = self.make_zoom(img)       
+        # axes_list = [(0,1),(1,2),(0,2)]
+        # if self.flip:
+        #     axes = random.choice(axes_list)
+        #     img = np.flip(img, axes)
+        # if self.rotation > 0:
+        #     axes = random.choice(axes_list)
+        #     angle = random.randint(-self.rotation, self.rotation)
+        #     img = ndimage.rotate(img, angle, axes=axes, reshape=True)
+        #     img = self.__crop_img(img)
+        # if self.zoom > 1.0:
+        #     img = self.make_zoom(img)       
 
         if self.fourth_axis:
             # # One more dimension for the channels
@@ -232,10 +232,4 @@ class DataGenerator(data_utils.Sequence):
                         img = deformador_gaussiano.perform_operation(img)
                         # print('train mode')
                     X[c,:,:,:] = img
-                
-                
-            
-
         return X
-        
-        # return X/np.max(X) #We normalize between 0 an 1
