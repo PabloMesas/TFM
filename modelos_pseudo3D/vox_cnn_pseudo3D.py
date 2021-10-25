@@ -19,8 +19,8 @@ def voxCNN_pseudo3D(
     x = layers.experimental.preprocessing.RandomZoom(height_factor=0.3, fill_mode='constant')(x)
 
     # Block 1 - PseudoRGB with 3  filters
-    x = layers.Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_64')(x)
-    x = layers.Conv2D(32, (3, 3), activation='relu', padding='same', name='block1_32')(x)
+    # x = layers.Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_64')(x)
+    # x = layers.Conv2D(32, (3, 3), activation='relu', padding='same', name='block1_32')(x)
     x = layers.Conv2D(16, (3, 3), activation='relu', padding='same', name='block1_16')(x)
     input_psudoRGB = layers.Conv2D(3, (3, 3), activation='relu', padding='same', name='block0_pseudoRGB')(x)
     #TODO: Cambiar tamaño del filtro 3x3 o 1x1

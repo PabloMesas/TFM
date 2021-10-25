@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='0' 
+os.environ['CUDA_VISIBLE_DEVICES']='1' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -47,7 +47,7 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 64
+batch_size = 16
 epochs = 120
 shape=128
 classes = ["AD", "CN"]
@@ -66,22 +66,22 @@ model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch
 # model.summary()
 
 project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA_nougmented/"
-from data_generator import DataGenerator
+from data_generator_ps3D import DataGenerator
 
 training_generator = DataGenerator(data_path=project_dir + '/Train/',
                                    dim=images_shape,
                                    batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
-                                   fourth_axis = False,
-                                   shuffle=True)
+                                   test=False,
+                                   shuffle=True
+                                   )
 valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
                                    dim=images_shape,
                                    batch_size = 1,
                                    n_channels = n_channels,
                                    classes = classes,
                                    test=False,
-                                   fourth_axis = False,
                                    shuffle=True)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape,
@@ -89,7 +89,6 @@ test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    n_channels = n_channels,
                                    classes = classes,
                                    test=True,
-                                   fourth_axis = False,
                                    shuffle=True)
 
 name_prefix = model.name + '_3x3_' + '_' + '-'.join(classes) + '_' + str(shape)
@@ -126,7 +125,7 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.000001, beta_1=0.8, beta_2=0.8)
+opt = Adam(0.0001, beta_1=0.8, beta_2=0.8)
 
 # Compile the model
 
