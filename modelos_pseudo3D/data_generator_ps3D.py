@@ -153,6 +153,26 @@ class DataGenerator(data_utils.Sequence):
         img = image + factor
         return np.clip(img, 0.0, 1.0)
 
+    def random_contrast(self, image, max_delta):
+        lower = 1.0
+        upper = 1.0
+        if isinstance(max_delta, (tuple, list)):
+            if max_delta[0] < 0.0:
+                print("max_delta value must be between 0.0 and 1.0")
+                return
+            lower = max_delta[0]
+            upper = max_delta[1]
+        else:
+            if max_delta < 0.0:
+                print("max_delta value must be between 0.0 and 1.0")
+                return
+            lower = 1.0 - max_delta
+            upper = 1.0 + max_delta
+        factor = random.uniform(lower, upper)
+        mean = np.mean(image)
+        img = (image - mean)*factor + mean
+        return np.clip(img, 0.0, 1.0)
+
 
     def __load_data(self, img_path):
         # load nibabel Method
@@ -167,6 +187,14 @@ class DataGenerator(data_utils.Sequence):
 
         if not self.test:
             img = self.random_brightness(img, 0.2)
+            img = self.random_contrast(img, (0.5, 2))
+        
+        img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
+
+        if not self.test:
+            deformador_gaussiano = GaussianDistortion(4, 4, 6, "bell", "in", 1.0, 1.0, 1.0, 1.0)
+            img = deformador_gaussiano.perform_operation(img)
+            # print('train mode')
 
         return img
 
@@ -182,12 +210,6 @@ class DataGenerator(data_utils.Sequence):
             img_path = os.path.join(case_path, i);
 
             img = self.__load_data(img_path=img_path)
-            img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
-
-            if not self.test:
-                deformador_gaussiano = GaussianDistortion(4, 4, 10, "bell", "in", 1.0, 1.0, 1.0, 1.0)
-                img = deformador_gaussiano.perform_operation(img)
-                # print('train mode')
                 
             X[c,:,:,:] = img
         return X

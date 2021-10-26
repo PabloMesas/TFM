@@ -59,8 +59,8 @@ images_shape = (shape,shape,shape)
 # model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
 # model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=False, frozen=False,) # batch=32 lr=0.000001
 # model = DenseNet_pseudoRGB(input_shape=images_shape, classes=num_classes) # batch=32 lr=0.000001
-model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
-# model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
+# model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
+model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
 # model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
 
 # model.summary()
@@ -125,7 +125,7 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.0001, beta_1=0.8, beta_2=0.8)
+opt = Adam(0.00001)
 
 # Compile the model
 

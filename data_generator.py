@@ -22,7 +22,6 @@ class DataGenerator(data_utils.Sequence):
                     batch_size = 1,
                     n_channels = 1,
                     classes = ["AD", "CN", "MCI"],
-                    fourth_axis = True,
                     test=False,
                     shuffle=True,
                     flip=False,
@@ -34,12 +33,11 @@ class DataGenerator(data_utils.Sequence):
         self.batch_size = batch_size
         self.n_channels = n_channels
         self.num_classes = len(classes)
-        self.fourth_axis = fourth_axis
         self.test = test
         self.shuffle = shuffle
-        # self.flip = flip
-        # self.zoom=zoom
-        # self.rotation = rotation if rotation<=360 else rotation % 360
+        self.flip = flip
+        self.zoom=zoom
+        self.rotation = rotation if rotation<=360 else rotation % 360
         self.classes = classes
         self.label_encoder = self.__set_label_encoder(self.classes)
         self.list_IDs, self.Y_labels = self.__get_index(data_path)
@@ -151,20 +149,45 @@ class DataGenerator(data_utils.Sequence):
 
         return img[x0:-(1+x1),y0:-(1+y1),z0:-(1+z1)]
     
-    # def make_zoom(self, img):
-    #     zoom = round(random.uniform(1.05, self.zoom), 2)
-    #     if zoom > 1.0:
-    #         original_shape = img.shape
-    #         img = ndimage.zoom(img, zoom)
-    #         zoomed_shape = img.shape
-    #         crop_values = (zoomed_shape[0]-original_shape[0],
-    #                         zoomed_shape[1]-original_shape[1],
-    #                         zoomed_shape[2]-original_shape[2])
+    def make_zoom(self, img):
+        zoom = round(random.uniform(1.05, self.zoom), 2)
+        if zoom > 1.0:
+            original_shape = img.shape
+            img = ndimage.zoom(img, zoom)
+            zoomed_shape = img.shape
+            crop_values = (zoomed_shape[0]-original_shape[0],
+                            zoomed_shape[1]-original_shape[1],
+                            zoomed_shape[2]-original_shape[2])
 
-    #         img = img[ int(crop_values[0]/2):-int(crop_values[0]/2),
-    #                 int(crop_values[1]/2):-int(crop_values[1]/2),
-    #                 int(crop_values[2]/2):-int(crop_values[2]/2) ]
-    #     return img
+            img = img[ int(crop_values[0]/2):-int(crop_values[0]/2),
+                    int(crop_values[1]/2):-int(crop_values[1]/2),
+                    int(crop_values[2]/2):-int(crop_values[2]/2) ]
+        return img
+
+    def random_brightness(self, image, max_delta):
+        factor = random.uniform(-max_delta, max_delta)
+        img = image + factor
+        return np.clip(img, 0.0, 1.0)
+
+    def random_contrast(self, image, max_delta):
+        lower = 1.0
+        upper = 1.0
+        if isinstance(max_delta, (tuple, list)):
+            if max_delta[0] < 0.0:
+                print("max_delta value must be between 0.0 and 1.0")
+                return
+            lower = max_delta[0]
+            upper = max_delta[1]
+        else:
+            if max_delta < 0.0:
+                print("max_delta value must be between 0.0 and 1.0")
+                return
+            lower = 1.0 - max_delta
+            upper = 1.0 + max_delta
+        factor = random.uniform(lower, upper)
+        mean = np.mean(image)
+        img = (image - mean)*factor + mean
+        return np.clip(img, 0.0, 1.0)
     
     def __load_data(self, img_path):
         # load nibabel Method
@@ -174,62 +197,51 @@ class DataGenerator(data_utils.Sequence):
         
         img = ndimage.rotate(img, 90, axes=(0,2), reshape=True)
 
-        # axes_list = [(0,1),(1,2),(0,2)]
-        # if self.flip:
-        #     axes = random.choice(axes_list)
-        #     img = np.flip(img, axes)
-        # if self.rotation > 0:
-        #     axes = random.choice(axes_list)
-        #     angle = random.randint(-self.rotation, self.rotation)
-        #     img = ndimage.rotate(img, angle, axes=axes, reshape=True)
-        #     img = self.__crop_img(img)
-        # if self.zoom > 1.0:
-        #     img = self.make_zoom(img)       
+        img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
 
-        if self.fourth_axis:
-            # # One more dimension for the channels
-            img = np.expand_dims(img, axis=3)
+        axes_list = [(0,1),(1,2),(0,2)]
+        if not self.test:
+            img = np.flip(img, 0)
+            if self.rotation > 0:
+                angle = random.randint(-self.rotation, self.rotation)
+                img = ndimage.rotate(img, angle, axes=(0,1), reshape=False, mode='constant')
+                # img = self.__crop_img(img)
+            if self.zoom > 1.0:
+                img = self.make_zoom(img)       
 
         #NORMALIZATION
-        # img = img/np.max(img) #We normalize between 0 an 1
         img = (img - np.mean(img)) / np.std(img) #whitening
+        img = (img-np.min(img))/np.max(img) #We normalize between 0 an 1
 
-        # # deformador = Distort(10, 10, 500)
-        # deformador_gaussiano = GaussianDistortion(6, 6, 2, "bell", "in", 1.0, 1.0, 1.0, 1.0)
-        # # augmented_img = deformador.perform_operation(image)
+        if not self.test:
+            img = self.random_brightness(img, 0.2)
+            img = self.random_contrast(img, (0.5, 2))
 
-        # img = deformador_gaussiano.perform_operation(img)
+        if not self.test:
+            deformador_gaussiano = GaussianDistortion(4, 4, 6, "bell", "in", 1.0, 1.0, 1.0, 1.0)
+            img = deformador_gaussiano.perform_operation(img)
+            # print('train mode')
 
+        # img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
+
+        # # One more dimension for the channels
+        img = np.expand_dims(img, axis=3)
 
         return img
 
     def __data_generation(self, Batch_ids, Batch_Y):
         'Generates data containing batch_size samples'
         # Initialization
-        if self.fourth_axis:
-            X = np.zeros((self.batch_size, *self.dim, self.n_channels))
-        else:
-            X = np.zeros((self.batch_size, *self.dim))
+        X = np.zeros((self.batch_size, *self.dim, self.n_channels))
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = []
-            # Generate data
-            for c, i in enumerate(Batch_ids): #count, element
-                case_path = os.path.join(self.data_path,
-                                        self.label_encoder.inverse_transform([Batch_Y[c]])[0])
-                img_path = os.path.join(case_path, i);
+        # Generate data
+        for c, i in enumerate(Batch_ids): #count, element
+            case_path = os.path.join(self.data_path,
+                                    self.label_encoder.inverse_transform([Batch_Y[c]])[0])
+            img_path = os.path.join(case_path, i);
 
-                img = self.__load_data(img_path=img_path)
+            img = self.__load_data(img_path=img_path)
 
-
-
-                if self.fourth_axis:
-                    X[c,:,:,:,:] = resize(img, (self.dim[0], self.dim[1], self.dim[2], 1))
-                else:
-                    img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
-                    if not self.test:
-                        deformador_gaussiano = GaussianDistortion(4, 4, 10, "bell", "in", 1.0, 1.0, 1.0, 1.0)
-                        img = deformador_gaussiano.perform_operation(img)
-                        # print('train mode')
-                    X[c,:,:,:] = img
+            X[c,:,:,:,:] = img
+    
         return X
