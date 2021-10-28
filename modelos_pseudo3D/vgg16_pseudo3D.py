@@ -15,8 +15,17 @@ def brainVGG16_pseudo3D(
 
     #Input
     img_input = layers.Input(shape=input_shape)
+    x = layers.experimental.preprocessing.RandomFlip("vertical")(img_input)
+    # x = layers.experimental.preprocessing.RandomContrast(0.7)(x)
+    x = layers.experimental.preprocessing.RandomRotation(0.2, fill_mode='constant')(x) #nearest
+    x = layers.experimental.preprocessing.RandomTranslation(height_factor=0.1, width_factor=0.1, fill_mode='nearest')(x)
+    x = layers.experimental.preprocessing.RandomZoom(height_factor=0.15, fill_mode='constant')(x)
+
     # Block 1 - PseudoRGB with 3  filters
-    input_psudoRGB = layers.Conv2D(3, (3, 3), activation='relu', padding='same', name='block1_pseudoRGB')(img_input)
+    x = layers.Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_64')(x)
+    x = layers.Conv2D(32, (3, 3), activation='relu', padding='same', name='block1_32')(x)
+    x = layers.Conv2D(16, (3, 3), activation='relu', padding='same', name='block1_16')(x)
+    input_psudoRGB = layers.Conv2D(3, (3, 3), activation='relu', padding='same', name='block0_pseudoRGB')(x)
     #TODO: Cambiar tamaño del filtro 3x3 o 1x1
 
     if pretrained:
@@ -32,10 +41,10 @@ def brainVGG16_pseudo3D(
     conv = model1.get_layer('block4_pool')
     # Classification block
     x = layers.Flatten(name='flatten')(conv.output)
-    # x = layers.Dense(128, activation='relu', name='fc1')(x)
-    # x = layers.BatchNormalization()(x)
-    # x = layers.Dropout(0.7)(x)
-    # x = layers.Dense(64, activation='relu', name='fc2')(x)
+    x = layers.Dense(128, activation='relu', name='fc1')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.7)(x)
+    x = layers.Dense(64, activation='relu', name='fc2')(x)
     predictions = layers.Dense(n_classes, activation=classifier_activation, name='predictions')(x)
 
     model = Model(inputs=model1.inputs, outputs=predictions)

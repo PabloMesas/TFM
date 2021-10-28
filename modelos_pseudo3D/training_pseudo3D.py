@@ -56,11 +56,11 @@ n_channels = 1
 images_shape = (shape,shape,shape)
 
 # **MODEL**
-# model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
+model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
 # model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=False, frozen=False,) # batch=32 lr=0.000001
 # model = DenseNet_pseudoRGB(input_shape=images_shape, classes=num_classes) # batch=32 lr=0.000001
 # model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
-model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
+# model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
 # model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
 
 # model.summary()
@@ -134,7 +134,7 @@ opt = Adam(0.00001)
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E66_AD-CN_128_23-09-2021_01-19.0.7812.m5')
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E80_AD-CN_128_23-09-2021_21-00.0.7667.m5')
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E02_MCI-CN_128_30-09-2021_18-40.0.7174.m5')
-# model.load_weights(project_dir + 'denseNet121_pseudoRGB_E30_AD-CN_128_06-10-2021_21-01.0.7167.m5')
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_V2_E45_AD-CN_128_26-10-2021_16-29.0.7133.m5')
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
@@ -143,7 +143,7 @@ model.compile(loss='categorical_crossentropy',
 # Fit data to model
 history = model.fit(x=training_generator,
                     epochs=epochs,
-                    # initial_epoch=30,
+                    # initial_epoch=45,
                     verbose=1,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,

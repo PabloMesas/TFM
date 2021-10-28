@@ -191,9 +191,9 @@ class DataGenerator(data_utils.Sequence):
         
         img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
 
-        if not self.test:
-            deformador_gaussiano = GaussianDistortion(4, 4, 6, "bell", "in", 1.0, 1.0, 1.0, 1.0)
-            img = deformador_gaussiano.perform_operation(img)
+        # if not self.test:
+        #     deformador_gaussiano = GaussianDistortion(4, 4, 6, "bell", "in", 1.0, 1.0, 1.0, 1.0)
+        #     img = deformador_gaussiano.perform_operation(img)
             # print('train mode')
 
         return img

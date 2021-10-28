@@ -17,7 +17,7 @@ def voxCNN_pseudo3D_V2(
     # x = layers.experimental.preprocessing.RandomContrast(0.7)(x)
     x = layers.experimental.preprocessing.RandomRotation(0.2, fill_mode='constant')(x) #nearest
     x = layers.experimental.preprocessing.RandomTranslation(height_factor=0.1, width_factor=0.1, fill_mode='nearest')(x)
-    x = layers.experimental.preprocessing.RandomZoom(height_factor=0.3, fill_mode='constant')(x)
+    x = layers.experimental.preprocessing.RandomZoom(height_factor=0.15, fill_mode='constant')(x)
 
     # Block 1 - PseudoRGB with 3  filters
     # x = layers.Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_64')(x)
