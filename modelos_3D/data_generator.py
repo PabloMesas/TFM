@@ -55,8 +55,8 @@ class DataGenerator(data_utils.Sequence):
                 y_labels.append(f[0])
 
         if not self.test:
-            x_index = x_index*8
-            y_labels = y_labels*8
+            x_index = x_index*10
+            y_labels = y_labels*10
         
         y_labels = self.label_encoder.transform(y_labels)
 
@@ -201,7 +201,8 @@ class DataGenerator(data_utils.Sequence):
 
         axes_list = [(0,1),(1,2),(0,2)]
         if not self.test:
-            img = np.flip(img, 0)
+            if random.random() < 0.5:
+                img = np.flip(img, 0)
             if self.rotation > 0:
                 angle = random.randint(-self.rotation, self.rotation)
                 img = ndimage.rotate(img, angle, axes=(0,1), reshape=False, mode='constant')

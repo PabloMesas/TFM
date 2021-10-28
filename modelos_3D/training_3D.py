@@ -47,9 +47,9 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 16
-epochs = 80
-shape=110
+batch_size = 10
+epochs = 120
+shape=128
 classes = ["AD", "CN"]
 num_classes = len(classes) 
 n_channels = 1
@@ -65,7 +65,7 @@ model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
 
 model.summary()
 
-project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA/"
+project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA_nougmented/"
 from data_generator import DataGenerator
 
 training_generator = DataGenerator(data_path=project_dir + '/Train/',
@@ -73,21 +73,27 @@ training_generator = DataGenerator(data_path=project_dir + '/Train/',
                                    batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
-                                #    flip=True,
-                                #    zoom=1.5,
-                                #    rotation=10,
-                                   shuffle=True)
+                                   test=False,
+                                    shuffle=True,
+                                    flip=True,
+                                    zoom=0.3,
+                                    rotation=40)
 valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
                                    dim=images_shape[:-1],
                                    batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
-                                   shuffle=True)
+                                   test=False,
+                                    shuffle=True,
+                                    flip=True,
+                                    zoom=0.3,
+                                    rotation=40)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape[:-1],
                                    batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
+                                   test=True,
                                    shuffle=True)
 
 name_prefix = model.name + '_' + '-'.join(classes) + '_' + str(shape)
@@ -124,7 +130,7 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.000027, decay=1e-6)
+opt = Adam(0.00001, decay=1e-6)
 
 # Compile the model
 
