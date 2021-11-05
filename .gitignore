@@ -1,4 +1,5 @@
 __pycache__/*
 DATA/*
-nohup.out
-*.pyc
+*.out
+modelos_pseudo3D/__pycache__/*
+*.cpython-37.pyc

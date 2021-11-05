@@ -47,7 +47,7 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 16
+batch_size = 32
 epochs = 120
 shape=128
 classes = ["AD", "CN"]
@@ -56,14 +56,14 @@ n_channels = 1
 images_shape = (shape,shape,shape)
 
 # **MODEL**
-model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
-# model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=False, frozen=False,) # batch=32 lr=0.000001
+# model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
+model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32 lr=0.000001
 # model = DenseNet_pseudoRGB(input_shape=images_shape, classes=num_classes) # batch=32 lr=0.000001
 # model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
 # model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
-# model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
+model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
 
-# model.summary()
+model.summary()
 
 project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA_nougmented/"
 from data_generator_ps3D import DataGenerator
@@ -125,7 +125,7 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.00001)
+opt = Adam(0.0001)
 
 # Compile the model
 
@@ -140,15 +140,15 @@ model.compile(loss='categorical_crossentropy',
               metrics=['accuracy'])
 # K.set_value(model.optimizer.learning_rate, 0.00001)
 
-# Fit data to model
-history = model.fit(x=training_generator,
-                    epochs=epochs,
-                    # initial_epoch=45,
-                    verbose=1,
-                    callbacks=callbacks_list,
-                    use_multiprocessing=True,
-                    workers=12,
-                    validation_data=valid_generator)
+# # Fit data to model
+# history = model.fit(x=training_generator,
+#                     epochs=epochs,
+#                     # initial_epoch=45,
+#                     verbose=1,
+#                     callbacks=callbacks_list,
+#                     use_multiprocessing=True,
+#                     workers=12,
+#                     validation_data=valid_generator)
 
 # Test
 # model.load_weights(project_dir + 'model_frozen_VoxResNet_ADMCI110_24-08-2021_00-57.03-0.748118.m5')

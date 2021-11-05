@@ -20,6 +20,8 @@ from simple_3d_cnn import SimpleVoxCNN
 from all_cnn import AllCNN
 from vox_inception import VoxInceptionCNN
 from vox_cnn_v2 import VoxCNN_V2
+from vox_cnn_v3 import VoxCNN_V3
+from vox_cnn_v4 import VoxCNN_V4
 from tensorflow.keras import backend as K
 # from tensorflow.keras.utils import to_categorical
 # from tensorflow.keras.utils import Sequence
@@ -48,7 +50,7 @@ import datetime
 x = datetime.datetime.today()
 
 batch_size = 10
-epochs = 120
+epochs = 10
 shape=128
 classes = ["AD", "CN"]
 num_classes = len(classes) 
@@ -56,8 +58,10 @@ n_channels = 1
 images_shape = (shape,shape,int(shape), n_channels)
 
 # **MODEL**
-model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
+# model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = VoxCNN_V2(input_shape=images_shape, n_classes=num_classes) # batch=8
+# model = VoxCNN_V3(input_shape=images_shape, n_classes=num_classes) # batch=8
+model = VoxCNN_V4(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = SimpleVoxCNN(input_shape=images_shape, n_classes=num_classes)
 # model = VoxResNet(input_shape=images_shape, n_classes=num_classes) # batch=4
 # model = AllCNN(input_shape=images_shape, n_classes=num_classes)
@@ -130,21 +134,26 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.00001, decay=1e-6)
+opt = Adam(0.000007, decay=1e-6)
 
 # Compile the model
 
 # model.load_weights(project_dir + 'VoxCNN_V2_E52_AD-CN_110_28-08-2021_11-19.0.8214.m5')
-# model.load_weights(project_dir + 'VoxCNN_E18_AD-CN_110_28-08-2021_00-45.0.7841.m5')
+# model.load_weights(project_dir + 'VoxCNN_E27_AD-CN_128_26-10-2021_18-27.0.7867.m5')
+# model.load_weights(project_dir + 'VoxCNN_V2_E44_AD-CN_128_26-10-2021_18-26.0.7633.m5')
+# model.load_weights(project_dir + 'VoxCNN_V2_E52_AD-CN_128_02-11-2021_14-02.0.7733.m5')
+
+model.load_weights(project_dir + 'VoxCNN_V4_E90_AD-CN_128_04-11-2021_16-44.0.7700.m5') #Acc 0.9062 ROC 0.938
+
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-# K.set_value(model.optimizer.learning_rate, 0.000001)
+# K.set_value(model.optimizer.learning_rate, 0.000007)
 
 # Fit data to model
 history = model.fit(x=training_generator,
                     epochs=epochs,
-                    # initial_epoch=20,
+                    # initial_epoch=27,
                     verbose=1,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,
