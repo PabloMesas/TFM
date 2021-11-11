@@ -47,7 +47,7 @@ def SimpleVoxCNN(
     x = layers.GlobalAveragePooling3D()(x)
     x = layers.Dense(512, name='fc1', kernel_regularizer=regularizers.l1(0.001))(x)
     x = layers.LeakyReLU(alpha=0.01)(x)
-    x = layers.GaussianDropout(0.5)(x)
+    x = layers.GaussianDropout(0.3)(x)
 
     x = layers.Dense(n_classes, activation=classifier_activation,
                         name='predictions')(x)

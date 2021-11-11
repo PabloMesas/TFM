@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='1' 
+os.environ['CUDA_VISIBLE_DEVICES']='0' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -51,8 +51,8 @@ x = datetime.datetime.today()
 
 batch_size = 10
 epochs = 120
-shape=128
-classes = ["AD", "CN"]
+shape=100
+classes = ["MCI", "AD"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape,shape,int(shape), n_channels)
@@ -61,9 +61,9 @@ images_shape = (shape,shape,int(shape), n_channels)
 # model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = VoxCNN_V2(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = VoxCNN_V3(input_shape=images_shape, n_classes=num_classes) # batch=8
-model = VoxCNN_V4(input_shape=images_shape, n_classes=num_classes) # batch=8
+# model = VoxCNN_V4(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = SimpleVoxCNN(input_shape=images_shape, n_classes=num_classes)
-# model = VoxResNet(input_shape=images_shape, n_classes=num_classes) # batch=4
+model = VoxResNet(input_shape=images_shape, n_classes=num_classes) # batch=4
 # model = AllCNN(input_shape=images_shape, n_classes=num_classes)
 # model = VoxInceptionCNN(input_shape=images_shape, n_classes=num_classes) # batch=16
 
@@ -134,8 +134,8 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.00001, decay=1e-6)
-
+opt = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True) #VoxResnet
+# opt = Adam(0.00001, decay=1e-6)
 # Compile the model
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
@@ -159,7 +159,21 @@ model.compile(loss='categorical_crossentropy',
 # model.load_weights(project_dir + 'VoxCNN_V4_E40_AD-CN_128_04-11-2021_16-44.0.8000.m5') #Acc 0.8906 ROC 0.903
 # model.load_weights(project_dir + 'VoxCNN_V4_E50_AD-CN_128_04-11-2021_16-44.0.7667.m5') #Acc 0.9062 ROC 0.929
 # model.load_weights(project_dir + 'VoxCNN_V4_E90_AD-CN_128_04-11-2021_16-44.0.7700.m5') #Acc 0.9062 ROC 0.938
-model.load_weights(project_dir + 'VoxCNN_V4_E04_AD-CN_128_05-11-2021_09-22.0.8067.m5') #Acc 0.9062 ROC 0.938
+
+# model.load_weights(project_dir + 'VoxResNet_E71_AD-CN_100_06-11-2021_13-05.0.8311.m5') #Acc 0.8438 ROC 0.904
+# model.load_weights(project_dir + 'VoxResNet_E112_AD-CN_100_06-11-2021_13-05.0.8176.m5') #Acc 0.8594 ROC 0.909
+# model.load_weights(project_dir + 'VoxResNet_E34_AD-CN_100_06-11-2021_13-05.0.7770.m5') #Acc 0.7812 ROC 0.825
+# model.load_weights(project_dir + 'VoxResNet_E93_AD-CN_100_06-11-2021_13-05.0.8446.m5') #Acc 0.8125 ROC 0.865
+# model.load_weights(project_dir + 'VoxResNet_E82_AD-CN_100_06-11-2021_13-05.0.7973.m5') #Acc 0.8281 ROC 0.865
+
+# model.load_weights(project_dir + 'VoxResNet_E06_MCI-AD-CN_100_09-11-2021_10-08.0.5174.m5')
+# model.load_weights(project_dir + 'VoxResNet_E74_MCI-CN_100_09-11-2021_19-21.0.7105.m5')
+# model.load_weights(project_dir + 'VoxResNet_E90_MCI-CN_100_09-11-2021_19-21.0.6711.m5')
+
+# model.load_weights(project_dir + 'VoxResNet_E03_MCI-AD_100_10-11-2021_12-46.0.7100.m5')
+model.load_weights(project_dir + 'VoxResNet_E20_MCI-AD_100_10-11-2021_12-46.0.7000.m5')
+# model.load_weights(project_dir + 'VoxResNet_E90_MCI-CN_100_09-11-2021_19-21.0.6711.m5')
+
 
 predictions = model.evaluate(test_generator,
                             use_multiprocessing=True,

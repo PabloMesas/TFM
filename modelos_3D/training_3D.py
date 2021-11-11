@@ -42,6 +42,9 @@ from glob import glob
 
 import SimpleITK as sitk
 
+from tensorflow.keras import layers
+from tensorflow.keras.models import Model
+
 physical_devices = tf.config.list_physical_devices('GPU') 
 for gpu_instance in physical_devices: 
     tf.config.experimental.set_memory_growth(gpu_instance, True)
@@ -50,9 +53,9 @@ import datetime
 x = datetime.datetime.today()
 
 batch_size = 10
-epochs = 10
+epochs = 120
 shape=128
-classes = ["AD", "CN"]
+classes = ["MCI", "AD"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape,shape,int(shape), n_channels)
@@ -60,7 +63,7 @@ images_shape = (shape,shape,int(shape), n_channels)
 # **MODEL**
 # model = VoxCNN(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = VoxCNN_V2(input_shape=images_shape, n_classes=num_classes) # batch=8
-# model = VoxCNN_V3(input_shape=images_shape, n_classes=num_classes) # batch=8
+# model = VoxCNN_V3(input_shape=images_shape, n_classes=num_classes) # batch=8 #NO USAR
 model = VoxCNN_V4(input_shape=images_shape, n_classes=num_classes) # batch=8
 # model = SimpleVoxCNN(input_shape=images_shape, n_classes=num_classes)
 # model = VoxResNet(input_shape=images_shape, n_classes=num_classes) # batch=4
@@ -112,7 +115,7 @@ checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
 callbacks_list = [
             # ReduceLROnPlateau(monitor='val_accuracy',
             #                   factor=0.1,
-            #                   patience=5,
+            #                   patience=15,
             #                   min_lr=0.000001,
             #                   verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
@@ -134,7 +137,10 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.000007, decay=1e-6)
+
+# opt = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True) #VoxResnet
+opt = Adam(0.000027, decay=1e-6)
+# opt = RMSprop(0.1)
 
 # Compile the model
 
@@ -143,17 +149,26 @@ opt = Adam(0.000007, decay=1e-6)
 # model.load_weights(project_dir + 'VoxCNN_V2_E44_AD-CN_128_26-10-2021_18-26.0.7633.m5')
 # model.load_weights(project_dir + 'VoxCNN_V2_E52_AD-CN_128_02-11-2021_14-02.0.7733.m5')
 
-model.load_weights(project_dir + 'VoxCNN_V4_E90_AD-CN_128_04-11-2021_16-44.0.7700.m5') #Acc 0.9062 ROC 0.938
+# model.load_weights(project_dir + 'VoxResNet_E12_AD-CN_100_06-11-2021_10-26.0.7568.m5') #Acc 0.5938 ROC 0.602
+
+# model.load_weights(project_dir + 'VoxResNet_E112_AD-CN_100_06-11-2021_13-05.0.8176.m5') #Acc 0.8594 ROC 0.909
+
+# dense_2=model.get_layer('fc1') 
+
+# predictions=layers.Dense(num_classes, activation='softmax', name='predictions')(dense_2.output)
+
+# model = Model(inputs=model.input, outputs=predictions)
+# model.summary()
 
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-# K.set_value(model.optimizer.learning_rate, 0.000007)
+# K.set_value(model.optimizer.learning_rate, 0.0001)
 
 # Fit data to model
 history = model.fit(x=training_generator,
                     epochs=epochs,
-                    # initial_epoch=27,
+                    # initial_epoch=12,
                     verbose=1,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,
