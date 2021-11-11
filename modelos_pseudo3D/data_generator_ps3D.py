@@ -27,7 +27,10 @@ class DataGenerator(data_utils.Sequence):
                     n_channels = 1,
                     classes = ["AD", "CN", "MCI"],
                     test=False,
-                    shuffle=True):
+                    shuffle=True,
+                    flip=False,
+                    zoom=0.0,
+                    rotation=0):
         'Initialization'
         self.data_path = data_path
         self.dim = dim
@@ -36,6 +39,9 @@ class DataGenerator(data_utils.Sequence):
         self.num_classes = len(classes)
         self.test = test
         self.shuffle = shuffle
+        self.flip = flip
+        self.zoom=zoom
+        self.rotation = rotation if rotation<=360 else rotation % 360
         self.classes = classes
         self.label_encoder = self.__set_label_encoder(self.classes)
         self.list_IDs, self.Y_labels = self.__get_index(data_path)
@@ -53,8 +59,8 @@ class DataGenerator(data_utils.Sequence):
                 y_labels.append(f[0])
 
         if not self.test:
-            x_index = x_index*10
-            y_labels = y_labels*10
+            x_index = x_index*5
+            y_labels = y_labels*5
         
         y_labels = self.label_encoder.transform(y_labels)
 
@@ -147,7 +153,21 @@ class DataGenerator(data_utils.Sequence):
 
         return img[x0:-(1+x1),y0:-(1+y1),z0:-(1+z1)]
     
-    
+    def make_zoom(self, img):
+        zoom = round(random.uniform(1.05, self.zoom), 2)
+        if zoom > 1.0:
+            original_shape = img.shape
+            img = ndimage.zoom(img, zoom)
+            zoomed_shape = img.shape
+            crop_values = (zoomed_shape[0]-original_shape[0],
+                            zoomed_shape[1]-original_shape[1],
+                            zoomed_shape[2]-original_shape[2])
+
+            img = img[ int(crop_values[0]/2):-int(crop_values[0]/2),
+                    int(crop_values[1]/2):-int(crop_values[1]/2),
+                    int(crop_values[2]/2):-int(crop_values[2]/2) ]
+        return img
+
     def random_brightness(self, image, max_delta):
         factor = random.uniform(-max_delta, max_delta)
         img = image + factor
@@ -172,14 +192,27 @@ class DataGenerator(data_utils.Sequence):
         mean = np.mean(image)
         img = (image - mean)*factor + mean
         return np.clip(img, 0.0, 1.0)
-
-
+    
     def __load_data(self, img_path):
         # load nibabel Method
         img = nib.load(img_path).get_fdata()
 
         img = self.__crop_img(img)
+        
         img = ndimage.rotate(img, 90, axes=(0,2), reshape=True)
+
+        img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
+
+        axes_list = [(0,1),(1,2),(0,2)]
+        if not self.test:
+            if random.random() < 0.5:
+                img = np.flip(img, 0)
+            if self.rotation > 0:
+                angle = random.randint(-self.rotation, self.rotation)
+                img = ndimage.rotate(img, angle, axes=(0,1), reshape=False, mode='constant')
+                # img = self.__crop_img(img)
+            if self.zoom > 1.0:
+                img = self.make_zoom(img)       
 
         #NORMALIZATION
         img = (img - np.mean(img)) / np.std(img) #whitening
@@ -188,13 +221,13 @@ class DataGenerator(data_utils.Sequence):
         if not self.test:
             img = self.random_brightness(img, 0.2)
             img = self.random_contrast(img, (0.5, 2))
-        
-        img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
 
-        # if not self.test:
-        #     deformador_gaussiano = GaussianDistortion(4, 4, 6, "bell", "in", 1.0, 1.0, 1.0, 1.0)
-        #     img = deformador_gaussiano.perform_operation(img)
+        if not self.test:
+            deformador_gaussiano = GaussianDistortion(4, 4, 6, "bell", "in", 1.0, 1.0, 1.0, 1.0)
+            img = deformador_gaussiano.perform_operation(img)
             # print('train mode')
+
+        # img = resize(img, (self.dim[0], self.dim[1], self.dim[2]))
 
         return img
 

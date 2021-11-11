@@ -55,8 +55,8 @@ class DataGenerator(data_utils.Sequence):
                 y_labels.append(f[0])
 
         if not self.test:
-            x_index = x_index*10
-            y_labels = y_labels*10
+            x_index = x_index*5
+            y_labels = y_labels*5
         
         y_labels = self.label_encoder.transform(y_labels)
 
