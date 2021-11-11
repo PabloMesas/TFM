@@ -47,7 +47,7 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 32
+batch_size = 16
 epochs = 120
 shape=128
 classes = ["AD", "CN"]
@@ -56,12 +56,13 @@ n_channels = 1
 images_shape = (shape,shape,shape)
 
 # **MODEL**
-# model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
-model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32 lr=0.000001
-# model = DenseNet_pseudoRGB(input_shape=images_shape, classes=num_classes) # batch=32 lr=0.000001
+model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
+# model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32 lr=0.000001
 # model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
+
+# model = DenseNet_pseudoRGB(input_shape=images_shape, classes=num_classes) # batch=32 lr=0.000001
 # model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
-model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
+# model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
 
 model.summary()
 
@@ -74,26 +75,31 @@ training_generator = DataGenerator(data_path=project_dir + '/Train/',
                                    n_channels = n_channels,
                                    classes = classes,
                                    test=False,
-                                   shuffle=True
-                                   )
+                                    shuffle=True,
+                                    flip=True,
+                                    zoom=0.3,
+                                    rotation=40)
 valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
                                    dim=images_shape,
-                                   batch_size = 1,
+                                   batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
                                    test=False,
-                                   shuffle=True)
+                                    shuffle=True,
+                                    flip=True,
+                                    zoom=0.3,
+                                    rotation=40)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape,
-                                   batch_size = 2,
+                                   batch_size = batch_size,
                                    n_channels = n_channels,
                                    classes = classes,
                                    test=True,
                                    shuffle=True)
 
-name_prefix = model.name + '_3x3_' + '_' + '-'.join(classes) + '_' + str(shape)
+name_prefix = model.name + '_' + '-'.join(classes) + '_' + str(shape)
 name_code = name_prefix + '_' + x.strftime("%d-%m-%Y_%H-%M")
-name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M")
+name_epoch = model.name + '_' + x.strftime("%d-%m-%Y_%H-%M") + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape) 
 
 # graph_model = model_to_dot(model, show_shapes=True, show_layer_names=False,rankdir='LR')
 # graph_model.write_svg(project_dir + name_prefix + '_model.svg')
@@ -101,11 +107,11 @@ name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape
 # # Create a callback that saves the model's weights
 checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
 callbacks_list = [
-            # ReduceLROnPlateau(monitor='val_accuracy',
-            #                   factor=0.5,
-            #                   patience=30,
-            #                   min_lr=0.000001,
-            #                   verbose=1),
+            ReduceLROnPlateau(monitor='val_accuracy',
+                              factor=0.5,
+                              patience=10,
+                              min_lr=0.000001,
+                              verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
                             monitor='val_accuracy',
                             mode='max',
@@ -125,7 +131,9 @@ callbacks_list = [
                       append=False)
     ]
 
-opt = Adam(0.0001)
+# opt = Adam(0.000027, decay=1e-6)
+opt = RMSprop(0.0001, decay=1e-6)
+# opt = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True) #VoxResnet
 
 # Compile the model
 
@@ -135,23 +143,23 @@ opt = Adam(0.0001)
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E80_AD-CN_128_23-09-2021_21-00.0.7667.m5')
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_E02_MCI-CN_128_30-09-2021_18-40.0.7174.m5')
 # model.load_weights(project_dir + 'VoxCNN_pseudoRGB_V2_E45_AD-CN_128_26-10-2021_16-29.0.7133.m5')
+
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
 # K.set_value(model.optimizer.learning_rate, 0.00001)
 
-# # Fit data to model
-# history = model.fit(x=training_generator,
-#                     epochs=epochs,
-#                     # initial_epoch=45,
-#                     verbose=1,
-#                     callbacks=callbacks_list,
-#                     use_multiprocessing=True,
-#                     workers=12,
-#                     validation_data=valid_generator)
+# Fit data to model
+history = model.fit(x=training_generator,
+                    epochs=epochs,
+                    # initial_epoch=45,
+                    verbose=1,
+                    callbacks=callbacks_list,
+                    use_multiprocessing=True,
+                    workers=3,
+                    validation_data=valid_generator)
 
 # Test
-# model.load_weights(project_dir + 'model_frozen_VoxResNet_ADMCI110_24-08-2021_00-57.03-0.748118.m5')
 predictions = model.evaluate(test_generator,
                             use_multiprocessing=True,
                             workers=12)

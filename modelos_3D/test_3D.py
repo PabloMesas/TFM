@@ -94,7 +94,7 @@ valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
                                     rotation=40)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape[:-1],
-                                   batch_size = 1,
+                                   batch_size = 2,
                                    n_channels = n_channels,
                                    classes = classes,
                                    test=True,
@@ -142,12 +142,17 @@ model.compile(loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Test
-# model.load_weights(project_dir + 'VoxCNN_E97_AD-CN_128_29-10-2021_12-21.0.7900.m5')
-# model.load_weights(project_dir + 'VoxCNN_E117_AD-CN_128_29-10-2021_12-21.0.7900.m5')
+# model.load_weights(project_dir + 'VoxCNN_V4_E73_MCI-AD_128_10-11-2021_21-09.0.7150.m5')
+model.load_weights(project_dir + 'VoxCNN_V4_E45_MCI-AD_128_10-11-2021_21-09.0.7050.m5')
 
+# AD-CN
 # model.load_weights(project_dir + 'VoxCNN_V2_E44_AD-CN_128_26-10-2021_18-26.0.7633.m5')
 # model.load_weights(project_dir + 'VoxCNN_V2_E52_AD-CN_128_02-11-2021_14-02.0.7733.m5')
 # model.load_weights(project_dir + 'VoxCNN_V2_E37_AD-CN_128_03-11-2021_17-13.0.7833.m5')
+# MCI-CN
+# model.load_weights(project_dir + 'VoxCNN_V2_E03_MCI-CN_128_07-11-2021_18-38.0.7261.m5') #Acc 0.6200 ROC 0.690
+# model.load_weights(project_dir + 'VoxCNN_V2_E10_MCI-CN_128_07-11-2021_18-38.0.6739.m5') #Acc 0.6800 ROC 0.744
+# model.load_weights(project_dir + 'VoxCNN_V2_E20_MCI-CN_128_07-11-2021_18-38.0.6500.m5') #Acc 0.6300 ROC 0.745
 
 # model.load_weights(project_dir + 'VoxCNN_V3_E10_AD-CN_128_04-11-2021_12-54.0.7767.m5')
 
@@ -174,6 +179,7 @@ model.compile(loss='categorical_crossentropy',
 model.load_weights(project_dir + 'VoxResNet_E20_MCI-AD_100_10-11-2021_12-46.0.7000.m5')
 # model.load_weights(project_dir + 'VoxResNet_E90_MCI-CN_100_09-11-2021_19-21.0.6711.m5')
 
+# model.load_weights(project_dir + 'VoxCNN_V4_E20_MCI-AD-CN_128_07-11-2021_20-22.0.4828.m5') #Acc 0.9062 ROC 0.938
 
 predictions = model.evaluate(test_generator,
                             use_multiprocessing=True,

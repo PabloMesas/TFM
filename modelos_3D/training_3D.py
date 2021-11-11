@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='0' 
+# os.environ['CUDA_VISIBLE_DEVICES']='1' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -105,7 +105,7 @@ test_generator = DataGenerator(data_path=project_dir + '/Test/',
 
 name_prefix = model.name + '_' + '-'.join(classes) + '_' + str(shape)
 name_code = name_prefix + '_' + x.strftime("%d-%m-%Y_%H-%M")
-name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M")
+name_epoch = model.name + '_' + x.strftime("%d-%m-%Y_%H-%M") + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape) 
 
 # graph_model = model_to_dot(model, show_shapes=True, show_layer_names=False,rankdir='LR')
 # graph_model.write_svg(project_dir + name_prefix + '_model.svg')
@@ -144,10 +144,17 @@ opt = Adam(0.000027, decay=1e-6)
 
 # Compile the model
 
-# model.load_weights(project_dir + 'VoxCNN_V2_E52_AD-CN_110_28-08-2021_11-19.0.8214.m5')
+model.load_weights(project_dir + 'VoxCNN_V4_E30_MCI-AD_128_06-11-2021_10-18.0.6150.m5')
 # model.load_weights(project_dir + 'VoxCNN_E27_AD-CN_128_26-10-2021_18-27.0.7867.m5')
 # model.load_weights(project_dir + 'VoxCNN_V2_E44_AD-CN_128_26-10-2021_18-26.0.7633.m5')
-# model.load_weights(project_dir + 'VoxCNN_V2_E52_AD-CN_128_02-11-2021_14-02.0.7733.m5')
+# model.load_weights(project_dir + 'VoxCNN_V2_E10_MCI-CN_128_07-11-2021_18-38.0.6739.m5') #Acc 0.6800 ROC 0.744
+
+# model.load_weights(project_dir + 'VoxCNN_V4_E20_AD-CN_128_04-11-2021_16-44.0.7567.m5') #Acc 0.8906 ROC 0.881
+# model.load_weights(project_dir + 'VoxCNN_V4_E10_MCI-AD-CN_128_08-11-2021_12-58.0.4448.m5') #Acc 0.9062 ROC 0.938
+# VoxCNN_V4_E10_MCI-AD-CN_128_08-11-2021_12-58.0.4448.m5
+# dense_2=model.get_layer('fc2') 
+
+# predictions=layers.Dense(num_classes, activation='softmax', name='predictions')(dense_2.output)
 
 # model.load_weights(project_dir + 'VoxResNet_E12_AD-CN_100_06-11-2021_10-26.0.7568.m5') #Acc 0.5938 ROC 0.602
 
@@ -172,7 +179,7 @@ history = model.fit(x=training_generator,
                     verbose=1,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,
-                    workers=12,
+                    workers=3,
                     validation_data=valid_generator)
 
 # Test
