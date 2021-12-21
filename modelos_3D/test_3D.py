@@ -52,7 +52,7 @@ x = datetime.datetime.today()
 batch_size = 10
 epochs = 120
 shape=128
-classes = ["MCI", "AD"]
+classes = ["AD", "CN"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape,shape,int(shape), n_channels)
@@ -72,26 +72,6 @@ model = VoxCNN_V4(input_shape=images_shape, n_classes=num_classes) # batch=8
 project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA_nougmented/"
 from data_generator import DataGenerator
 
-training_generator = DataGenerator(data_path=project_dir + '/Train/',
-                                   dim=images_shape[:-1],
-                                   batch_size = batch_size,
-                                   n_channels = n_channels,
-                                   classes = classes,
-                                   test=False,
-                                    shuffle=True,
-                                    flip=True,
-                                    zoom=0.3,
-                                    rotation=40)
-valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
-                                   dim=images_shape[:-1],
-                                   batch_size = batch_size,
-                                   n_channels = n_channels,
-                                   classes = classes,
-                                   test=False,
-                                    shuffle=True,
-                                    flip=True,
-                                    zoom=0.3,
-                                    rotation=40)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape[:-1],
                                    batch_size = 2,
@@ -104,36 +84,6 @@ name_prefix = model.name + '_' + '-'.join(classes) + '_' + str(shape)
 name_code = name_prefix + '_' + x.strftime("%d-%m-%Y_%H-%M")
 name_epoch = model.name + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape) + '_' + x.strftime("%d-%m-%Y_%H-%M")
 
-# graph_model = model_to_dot(model, show_shapes=True, show_layer_names=False,rankdir='LR')
-# graph_model.write_svg(project_dir + name_prefix + '_model.svg')
-
-# # Create a callback that saves the model's weights
-checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
-callbacks_list = [
-            # ReduceLROnPlateau(monitor='val_accuracy',
-            #                   factor=0.1,
-            #                   patience=5,
-            #                   min_lr=0.000001,
-            #                   verbose=1),
-            ModelCheckpoint(filepath=checkpoint_path,
-                            monitor='val_accuracy',
-                            mode='max',
-                            # monitor='val_loss',
-                            # mode='min',
-                            verbose=1,
-                            save_best_only=True,
-                            save_weights_only = True),
-            ModelCheckpoint(filepath=checkpoint_path,
-                            monitor='val_accuracy',
-                            mode='auto',
-                            verbose=1,
-                            period=10,
-                            save_weights_only = True),
-            CSVLogger( project_dir +name_code+'.log',
-                      separator=',',
-                      append=False)
-    ]
-
 opt = Adam(0.00001, decay=1e-6)
 
 # Compile the model
@@ -143,7 +93,7 @@ model.compile(loss='categorical_crossentropy',
 
 # Test
 # model.load_weights(project_dir + 'VoxCNN_V4_E73_MCI-AD_128_10-11-2021_21-09.0.7150.m5')
-model.load_weights(project_dir + 'VoxCNN_V4_E45_MCI-AD_128_10-11-2021_21-09.0.7050.m5')
+# model.load_weights(project_dir + 'VoxCNN_V4_E45_MCI-AD_128_10-11-2021_21-09.0.7050.m5')
 
 # AD-CN
 # model.load_weights(project_dir + 'VoxCNN_V2_E44_AD-CN_128_26-10-2021_18-26.0.7633.m5')
@@ -163,7 +113,7 @@ model.load_weights(project_dir + 'VoxCNN_V4_E45_MCI-AD_128_10-11-2021_21-09.0.70
 # model.load_weights(project_dir + 'VoxCNN_V4_E23_AD-CN_128_04-11-2021_16-44.0.7933.m5') #Acc 0.8281 ROC 0.895
 # model.load_weights(project_dir + 'VoxCNN_V4_E40_AD-CN_128_04-11-2021_16-44.0.8000.m5') #Acc 0.8906 ROC 0.903
 # model.load_weights(project_dir + 'VoxCNN_V4_E50_AD-CN_128_04-11-2021_16-44.0.7667.m5') #Acc 0.9062 ROC 0.929
-# model.load_weights(project_dir + 'VoxCNN_V4_E90_AD-CN_128_04-11-2021_16-44.0.7700.m5') #Acc 0.9062 ROC 0.938
+model.load_weights(project_dir + 'VoxCNN_V4_E90_AD-CN_128_04-11-2021_16-44.0.7700.m5') #Acc 0.9062 ROC 0.938
 # model.load_weights(project_dir + 'VoxCNN_V4_E20_MCI-AD-CN_128_07-11-2021_20-22.0.4828.m5') #Acc 0.9062 ROC 0.938
 
 predictions = model.evaluate(test_generator,
@@ -206,5 +156,5 @@ if num_classes == 2:
     # show the legend
     plt.legend()
     # show the plot
-    plt.savefig(project_dir + name_prefix + '.png')
+    plt.savefig(project_dir + name_prefix + '.svg')
     # plt.show()

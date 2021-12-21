@@ -1,6 +1,6 @@
 import os
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   #if like me you do not have a lot of memory in your GPU
-os.environ['CUDA_VISIBLE_DEVICES']='1' 
+os.environ['CUDA_VISIBLE_DEVICES']='0' 
 # import keras
 from tensorflow import keras
 import tensorflow as tf
@@ -47,51 +47,31 @@ for gpu_instance in physical_devices:
 import datetime
 x = datetime.datetime.today()
 
-batch_size = 32
-epochs = 90
+batch_size = 16
+epochs = 120
 shape=128
-classes = ["MCI", "CN"]
+classes = ["AD", "CN"]
 num_classes = len(classes) 
 n_channels = 1
 images_shape = (shape,shape,shape)
 
 # **MODEL**
-# model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
+model = brainVGG16_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=16
 # model = denseNet121_pseudo3D(input_shape=images_shape, n_classes=num_classes, pretrained=True, frozen=False,) # batch=32 lr=0.000001
-model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
+# model = voxCNN_pseudo3D(input_shape=images_shape, n_classes=num_classes) # batch=32
 
 # model = DenseNet_pseudoRGB(input_shape=images_shape, classes=num_classes) # batch=32 lr=0.000001
 # model = voxCNN_pseudo3D_V2(input_shape=images_shape, n_classes=num_classes) # batch=32
 # model = voxCNN_pseudo3D_V3(input_shape=images_shape, n_classes=num_classes) # batch=32
 
-model.summary()
+# model.summary()
 
 project_dir = "/home/pmeslaf/TFM/DATA/FIRST_VISIT_DATA_nougmented/"
 from data_generator_ps3D import DataGenerator
 
-training_generator = DataGenerator(data_path=project_dir + '/Train/',
-                                   dim=images_shape,
-                                   batch_size = batch_size,
-                                   n_channels = n_channels,
-                                   classes = classes,
-                                   test=False,
-                                    shuffle=True,
-                                    flip=True,
-                                    zoom=0.3,
-                                    rotation=40)
-valid_generator = DataGenerator(data_path=project_dir + '/Validation/',
-                                   dim=images_shape,
-                                   batch_size = batch_size,
-                                   n_channels = n_channels,
-                                   classes = classes,
-                                   test=False,
-                                    shuffle=True,
-                                    flip=True,
-                                    zoom=0.3,
-                                    rotation=40)
 test_generator = DataGenerator(data_path=project_dir + '/Test/',
                                    dim=images_shape,
-                                   batch_size = batch_size,
+                                   batch_size = 10,
                                    n_channels = n_channels,
                                    classes = classes,
                                    test=True,
@@ -101,60 +81,55 @@ name_prefix = model.name + '_' + '-'.join(classes) + '_' + str(shape)
 name_code = name_prefix + '_' + x.strftime("%d-%m-%Y_%H-%M")
 name_epoch = model.name + '_' + x.strftime("%d-%m-%Y_%H-%M") + '_E{epoch:02d}_' + '-'.join(classes) + '_' + str(shape) 
 
-# graph_model = model_to_dot(model, show_shapes=True, show_layer_names=False,rankdir='LR')
-# graph_model.write_svg(project_dir + name_prefix + '_model.svg')
-
-# # Create a callback that saves the model's weights
-checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
-callbacks_list = [
-            # ReduceLROnPlateau(monitor='val_accuracy',
-            #                   factor=0.5,
-            #                   patience=10,
-            #                   min_lr=0.000001,
-            #                   verbose=1),
-            ModelCheckpoint(filepath=checkpoint_path,
-                            monitor='val_accuracy',
-                            mode='max',
-                            # monitor='val_loss',
-                            # mode='min',
-                            verbose=1,
-                            save_best_only=True,
-                            save_weights_only = True),
-            ModelCheckpoint(filepath=checkpoint_path,
-                            monitor='val_accuracy',
-                            mode='auto',
-                            verbose=1,
-                            period=10,
-                            save_weights_only = True),
-            CSVLogger( project_dir +name_code+'.log',
-                      separator=',',
-                      append=False)
-    ]
-
-opt = Adam(0.0001, decay=1e-6)
-# opt = RMSprop(0.000001, decay=1e-6)
+opt = Adam(0.000027, decay=1e-6)
+# opt = RMSprop(0.00001, decay=1e-6)
 # opt = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True) #VoxResnet
 
 # Compile the model
 
 #AD - CN
-model.load_weights(project_dir + 'VoxCNN_pseudoRGB_18-11-2021_09-53_E68_MCI-CN_128.0.6696.m5') #ROC 0.618 ACC. 0.6406
-# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_16-11-2021_18-30_E40_MCI-CN_128.0.6518.m5') #ROC 0.822 ACC. 0.8218
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_12-11-2021_17-16_E117_AD-CN_128.0.6458.m5') #ROC 0.618 ACC. 0.6406
+model.load_weights(project_dir + 'VGG16_pseudoRGB_12-11-2021_17-14_E114_AD-CN_128.0.7083.m5') #ROC 0.822 ACC. 0.8218
+
+#MCI - AD
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_14-11-2021_23-35_E03_MCI-AD_128.0.7135.m5') #ROC 0.590 ACC. 0.7159
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_14-11-2021_23-35_E40_MCI-AD_128.0.7083.m5') #ROC 0.670 ACC. 0.7159
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_15-11-2021_12-44_E80_MCI-AD_128.0.7100.m5') #ROC 0.685 ACC. 0.7159
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_15-11-2021_12-46_E80_MCI-AD_128.0.7031.m5') #ROC 0.575 ACC. 0.6818
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_14-11-2021_23-35_E27_MCI-AD_128.0.7135.m5') #ROC 0.475 ACC. 0.6705
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_14-11-2021_19-40_E58_MCI-AD_128.0.6927.m5') #ROC 0.561 ACC. 0.6932
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_15-11-2021_10-34_E04_MCI-AD_128.0.7188.m5') #ROC 0.397 ACC. 0.7045
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_15-11-2021_10-34_E20_MCI-AD_128.0.6875.m5') #ROC 0.469 ACC. 0.7045
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_15-11-2021_10-34_E02_MCI-AD_128.0.7083.m5') #ROC 0.406 ACC. 0.7045
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_15-11-2021_10-34_E50_MCI-AD_128.0.6771.m5') #ROC 0.446 ACC. 0.6932
+
+#MCI - CN
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_18-11-2021_00-33_E52_MCI-CN_128.0.6161.m5') #ROC 0.506 ACC. 0.6200
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_18-11-2021_00-33_E70_MCI-CN_128.0.6295.m5') #ROC 0.576 ACC. 0.5900
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_18-11-2021_00-33_E75_MCI-CN_128.0.6652.m5') #ROC 0.573 ACC. 0.5900
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_15-11-2021_12-46_E80_MCI-AD_128.0.7031.m5') #ROC 0.575 ACC. 0.6818
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_14-11-2021_23-35_E27_MCI-AD_128.0.7135.m5') #ROC 0.475 ACC. 0.6705
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_14-11-2021_19-40_E58_MCI-AD_128.0.6927.m5') #ROC 0.561 ACC. 0.6932
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_19-11-2021_13-30_E84_MCI-CN_128.0.6696.m5') #ROC 0.578 ACC. 0.6000
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_18-11-2021_09-53_E68_MCI-CN_128.0.6696.m5') #ROC 0.602 ACC. 0.6000
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_18-11-2021_09-53_E43_MCI-CN_128.0.6562.m5') #ROC 0.614 ACC. 0.6200
+
+#MCI - AD - CN
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_18-11-2021_00-33_E52_MCI-CN_128.0.6161.m5') #ROC 0.506 ACC. 0.6200
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_18-11-2021_00-33_E70_MCI-CN_128.0.6295.m5') #ROC 0.576 ACC. 0.5900
+# model.load_weights(project_dir + 'VGG16_pseudoRGB_18-11-2021_00-33_E75_MCI-CN_128.0.6652.m5') #ROC 0.573 ACC. 0.5900
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_18-11-2021_12-12_E62_MCI-CN-AD_128.0.5471.m5') #ACC. 0.4524
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_18-11-2021_12-12_E68_MCI-CN-AD_128.0.5580.m5') #ACC. 0.4762
+# model.load_weights(project_dir + 'denseNet121_pseudoRGB_18-11-2021_12-12_E14_MCI-CN-AD_128.0.5181.m5') #ACC. 0.4683
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_16-11-2021_18-32_E110_MCI-CN-AD_128.0.5486.m5') #ACC. 0.5238
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_16-11-2021_18-32_E56_MCI-CN-AD_128.0.5278.m5') #ACC. 0.4921
+# model.load_weights(project_dir + 'VoxCNN_pseudoRGB_16-11-2021_18-32_E51_MCI-CN-AD_128.0.5243.m5') #ACC. 0.4365
+
+
 
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-K.set_value(model.optimizer.learning_rate, 0.0001)
-
-# Fit data to model
-history = model.fit(x=training_generator,
-                    epochs=epochs,
-                    initial_epoch=68,
-                    verbose=1,
-                    callbacks=callbacks_list,
-                    use_multiprocessing=True,
-                    workers=2,
-                    validation_data=valid_generator)
 
 # Test
 predictions = model.evaluate(test_generator,
@@ -197,5 +172,5 @@ if num_classes == 2:
     # show the legend
     plt.legend()
     # show the plot
-    plt.savefig(project_dir + name_prefix + '.png')
+    plt.savefig(project_dir + name_prefix + '.svg')
     # plt.show()

@@ -37,7 +37,7 @@ def denseNet121_pseudo3D(
         for layer in model1.layers[:]:
             layer.trainable = False
 
-    # model1.summary()
+    model1.summary()
     conv = model1.get_layer('relu')
     # Classification block
     # x = layers.Flatten(name='flatten')(conv.output)
