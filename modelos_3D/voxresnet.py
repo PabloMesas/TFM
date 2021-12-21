@@ -44,9 +44,9 @@ def ResNet(stack_fn,
     x = layers.MaxPooling3D(pool_size=(7, 7, 7), name='max_pool')(x)
     x = layers.Flatten(name='flatten')(x)
     x = layers.Dense(128, activation='relu', name='fc1')(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Dropout(0.7)(x)
-    x = layers.Dense(64, activation='relu', name='fc2')(x)
+    # x = layers.BatchNormalization()(x)
+    # x = layers.Dropout(0.7)(x)
+    # x = layers.Dense(64, activation='relu', name='fc2')(x)
 
     x = layers.Dense(n_classes, activation=classifier_activation,
                         name='predictions')(x)

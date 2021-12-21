@@ -113,11 +113,11 @@ name_epoch = model.name + '_' + x.strftime("%d-%m-%Y_%H-%M") + '_E{epoch:02d}_' 
 # # Create a callback that saves the model's weights
 checkpoint_path = project_dir +name_epoch+'.{val_accuracy:.4f}.m5'
 callbacks_list = [
-            ReduceLROnPlateau(monitor='val_accuracy',
-                              factor=0.1,
-                              patience=15,
-                              min_lr=0.000001,
-                              verbose=1),
+            # ReduceLROnPlateau(monitor='val_accuracy',
+            #                   factor=0.1,
+            #                   patience=15,
+            #                   min_lr=0.000001,
+            #                   verbose=1),
             ModelCheckpoint(filepath=checkpoint_path,
                             monitor='val_accuracy',
                             mode='max',
@@ -137,8 +137,11 @@ callbacks_list = [
                       append=False)
     ]
 
-# opt = Adam(0.000027, decay=1e-6)
-opt = RMSprop(0.0001, decay=1e-6)
+
+# opt = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True) #VoxResnet
+opt = Adam(0.000027, decay=1e-6)
+# opt = RMSprop(0.1)
+
 # Compile the model
 
 model.load_weights(project_dir + 'VoxCNN_V4_E30_MCI-AD_128_06-11-2021_10-18.0.6150.m5')
@@ -153,18 +156,26 @@ model.load_weights(project_dir + 'VoxCNN_V4_E30_MCI-AD_128_06-11-2021_10-18.0.61
 
 # predictions=layers.Dense(num_classes, activation='softmax', name='predictions')(dense_2.output)
 
+# model.load_weights(project_dir + 'VoxResNet_E12_AD-CN_100_06-11-2021_10-26.0.7568.m5') #Acc 0.5938 ROC 0.602
+
+# model.load_weights(project_dir + 'VoxResNet_E112_AD-CN_100_06-11-2021_13-05.0.8176.m5') #Acc 0.8594 ROC 0.909
+
+# dense_2=model.get_layer('fc1') 
+
+# predictions=layers.Dense(num_classes, activation='softmax', name='predictions')(dense_2.output)
+
 # model = Model(inputs=model.input, outputs=predictions)
 # model.summary()
 
 model.compile(loss='categorical_crossentropy',
               optimizer=opt,
               metrics=['accuracy'])
-K.set_value(model.optimizer.learning_rate, 0.0001)
+# K.set_value(model.optimizer.learning_rate, 0.0001)
 
 # Fit data to model
 history = model.fit(x=training_generator,
                     epochs=epochs,
-                    # initial_epoch=27,
+                    # initial_epoch=12,
                     verbose=1,
                     callbacks=callbacks_list,
                     use_multiprocessing=True,
